@@ -1,35 +1,39 @@
 import type { Metadata } from "next"
-import { Geist, Geist_Mono } from "next/font/google"
+import { Inter, Tajawal } from "next/font/google"
 
 import { TooltipProvider } from "@/components/ui/tooltip"
 import "./globals.css"
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
+  display: "swap",
 })
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+const tajawal = Tajawal({
+  variable: "--font-tajawal",
+  subsets: ["arabic", "latin"],
+  weight: ["400", "500", "700", "800"],
+  display: "swap",
 })
 
 export const metadata: Metadata = {
   title: {
-    default: "Company Hub",
-    template: "%s · Company Hub",
+    default: "Roaya Connect",
+    template: "%s · Roaya Connect",
   },
   description:
-    "Internal workspace for projects, tasks, and collaboration across Northline.",
+    "Roaya Connect brings projects, tasks and team collaboration together.",
+  icons: { icon: "/icon.svg" },
 }
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${inter.variable} ${tajawal.variable} h-full antialiased`}
     >
-      <body className={`${geistSans.className} flex min-h-full flex-col`}>
+      <body className="flex min-h-full flex-col">
         <TooltipProvider delay={300}>{children}</TooltipProvider>
       </body>
     </html>

@@ -125,7 +125,7 @@ async function withRelatedLabels(
       ? { data: [], error: null }
       : await supabase
           .from("project_members")
-          .select("project_id, role")
+          .select("project_id, role, history_access, can_update_assigned_status")
           .eq("organization_id", organizationId)
           .eq("profile_id", userId)
           .in("project_id", projectIds)
@@ -162,7 +162,7 @@ async function withRelatedLabels(
       ambiguousProjects.add(member.project_id)
       continue
     }
-    if (member.role !== "viewer") writableProjects.add(member.project_id)
+    if (member.role !== "viewer" && member.history_access !== "assigned_only") writableProjects.add(member.project_id)
   }
   const assigneeNames = new Map(
     assignees.data.map((assignee) => [
@@ -192,6 +192,7 @@ async function withRelatedLabels(
       : null,
     dueOn: row.due_on,
     archivedAt: row.archived_at,
+    canUpdateStatus: Boolean(!row.archived_at && !archivedProjects.has(row.project_id) && row.assignee_id === userId && orgRole && orgRole !== "viewer" && projectMembers.data.some(member => member.project_id === row.project_id && member.history_access === "assigned_only" && member.role !== "viewer" && member.can_update_assigned_status)),
     canWrite: canWriteProjectTask(
       orgRole,
       row.project_id,
@@ -204,7 +205,7 @@ async function withRelatedLabels(
 }
 
 function canWriteProjectTask(
-  orgRole: "org_admin" | "member" | "viewer" | null,
+  orgRole: "org_admin" | "admin" | "team_lead" | "member" | "viewer" | null,
   projectId: string,
   visibleProjects: Set<string>,
   archivedProjects: Set<string>,
@@ -215,7 +216,7 @@ function canWriteProjectTask(
     return false
   }
   if (ambiguousProjects.has(projectId)) return false
-  if (orgRole === "org_admin") return true
+  if (orgRole === "org_admin" || orgRole === "admin") return true
   if (orgRole === "viewer") return false
   return writableProjects.has(projectId)
 }

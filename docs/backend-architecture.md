@@ -1,8 +1,8 @@
-# Company Hub — Backend architecture and Supabase migration plan
+# Roaya Connect — Backend architecture and Supabase migration plan
 
 Status: audit only. No tables, packages, or UI changes are part of this document.
 
-Company Hub is a Next.js 16.4.5 App Router frontend. React 19, TypeScript, Tailwind CSS 4, and shadcn/ui (Base UI) render a single company, Northline. There is no Supabase project, no `middleware.ts`, no `.env` file, and no authentication package. Identity, roles, and approval rights are constants and React state in the browser.
+Roaya Connect is a Next.js 16.4.5 App Router frontend. React 19, TypeScript, Tailwind CSS 4, and shadcn/ui (Base UI) render a single company, Northline. There is no Supabase project, no `middleware.ts`, no `.env` file, and no authentication package. Identity, roles, and approval rights are constants and React state in the browser.
 
 This plan describes the current app, a normalized PostgreSQL schema, server-enforced permissions, private storage, and an incremental migration that leaves the demo working until each slice is switched.
 

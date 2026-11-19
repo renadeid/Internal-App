@@ -30,7 +30,7 @@ export function DashboardView() {
     <div className="flex flex-col gap-8">
       <CreatedBanner />
       <div className="max-w-2xl">
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+        <h1 className="roaya-page-title text-foreground">
           Welcome back, {firstName}
         </h1>
         <p className="mt-2 text-sm leading-6 text-muted-foreground sm:text-base">
@@ -81,7 +81,7 @@ export function DashboardView() {
             href="/tasks"
             action="View all"
           />
-          <div className="rounded-xl border border-border bg-card px-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)] sm:px-5">
+          <div className="roaya-glass rounded-2xl border border-border bg-card px-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)] sm:px-5">
             {myTasks.length === 0 ? (
               <p className="py-8 text-sm text-muted-foreground">
                 You have no open tasks.
@@ -108,7 +108,7 @@ export function DashboardView() {
             href="/activity"
             action="View all"
           />
-          <div className="rounded-xl border border-border bg-card px-3 py-1 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+          <div className="roaya-glass rounded-2xl border border-border bg-card px-3 py-1 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
             <ul>
               {activity.slice(0, 5).map((item) => (
                 <ActivityFeedItem key={item.id} item={item} />

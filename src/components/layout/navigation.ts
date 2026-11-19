@@ -24,11 +24,11 @@ export type NavItem = {
 export const mainNav: NavItem[] = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/projects", label: "Projects", icon: FolderKanban },
-  { href: "/tasks", label: "My Tasks", icon: ListTodo },
+  { href: "/tasks", label: "My tasks", icon: ListTodo },
   { href: "/activity", label: "Activity", icon: Activity },
-  { href: "/assets", label: "Assets Library", icon: Images },
-  { href: "/artifacts", label: "Artifact Hub", icon: Boxes },
-  { href: "/knowledge", label: "Knowledge Base", icon: BookOpen },
+  { href: "/assets", label: "Assets library", icon: Images },
+  { href: "/artifacts", label: "Artifact hub", icon: Boxes },
+  { href: "/knowledge", label: "Knowledge base", icon: BookOpen },
 ]
 
 export const workspaceNav: NavItem[] = [
@@ -41,20 +41,20 @@ export const workspaceNav: NavItem[] = [
 ]
 
 export const utilityNav: NavItem[] = [
-  { href: "/people", label: "People & Onboarding", icon: Users },
+  { href: "/people", label: "People & onboarding", icon: Users },
   { href: "/settings", label: "Settings", icon: Settings },
 ]
 
 const labels: Record<AppRoute, string> = {
   "/": "Dashboard",
   "/projects": "Projects",
-  "/tasks": "My Tasks",
+  "/tasks": "My tasks",
   "/activity": "Activity",
-  "/assets": "Assets Library",
-  "/artifacts": "Artifact Hub",
-  "/knowledge": "Knowledge Base",
+  "/assets": "Assets library",
+  "/artifacts": "Artifact hub",
+  "/knowledge": "Knowledge base",
   "/workspaces/marketing": "Marketing",
-  "/people": "People & Onboarding",
+  "/people": "People & onboarding",
   "/settings": "Settings",
 }
 
@@ -65,5 +65,5 @@ export function isNavActive(pathname: string, href: AppRoute) {
 
 export function breadcrumbLabel(pathname: string) {
   if (pathname in labels) return labels[pathname as AppRoute]
-  return "Company Hub"
+  return "Roaya Connect"
 }

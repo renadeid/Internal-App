@@ -1,0 +1,134 @@
+CREATE OR REPLACE FUNCTION private.can_read_project(target_project uuid)
+ RETURNS boolean
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+  select exists (
+    select 1
+    from public.projects project
+    where project.id = target_project
+      and (
+        private.is_org_admin(project.organization_id)
+        or exists (
+          select 1
+          from public.project_members member
+          where member.project_id = project.id
+            and member.profile_id = (select auth.uid())
+        )
+      )
+  );
+$function$
+
+CREATE OR REPLACE FUNCTION private.can_write_project(target_project uuid)
+ RETURNS boolean
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+  select exists (
+    select 1
+    from public.projects project
+    where project.id = target_project
+      and (
+        private.is_org_admin(project.organization_id)
+        or exists (
+          select 1
+          from public.project_members member
+          join public.organization_memberships membership
+            on membership.organization_id = member.organization_id
+           and membership.profile_id = member.profile_id
+          where member.project_id = project.id
+            and member.profile_id = (select auth.uid())
+            and member.role <> 'viewer'
+            and membership.role <> 'viewer'
+        )
+      )
+  );
+$function$
+
+CREATE OR REPLACE FUNCTION private.is_department_manager(target_organization uuid, target_department uuid)
+ RETURNS boolean
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+  select exists (
+    select 1
+    from public.department_memberships membership
+    join public.organization_memberships org_membership
+      on org_membership.organization_id = membership.organization_id
+     and org_membership.profile_id = membership.profile_id
+    where membership.organization_id = target_organization
+      and membership.department_id = target_department
+      and membership.profile_id = (select auth.uid())
+      and membership.role = 'manager'
+      and org_membership.role <> 'viewer'
+  );
+$function$
+
+CREATE OR REPLACE FUNCTION private.is_org_admin(target_organization uuid)
+ RETURNS boolean
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+  select exists (
+    select 1
+    from public.organization_memberships membership
+    where membership.organization_id = target_organization
+      and membership.profile_id = (select auth.uid())
+      and membership.role = 'org_admin'
+  );
+$function$
+
+CREATE OR REPLACE FUNCTION private.is_org_member(target_organization uuid)
+ RETURNS boolean
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+  select exists (
+    select 1
+    from public.organization_memberships membership
+    where membership.organization_id = target_organization
+      and membership.profile_id = (select auth.uid())
+  );
+$function$
+
+CREATE OR REPLACE FUNCTION private.project_flag(target_project uuid, flag_name text)
+ RETURNS boolean
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+  select exists (
+    select 1
+    from public.project_members member
+    join public.organization_memberships membership
+      on membership.organization_id = member.organization_id
+     and membership.profile_id = member.profile_id
+    where member.project_id = target_project
+      and member.profile_id = (select auth.uid())
+      and member.role <> 'viewer'
+      and membership.role <> 'viewer'
+      and case flag_name
+        when 'edit' then member.can_edit
+        when 'manage_members' then member.can_manage_members
+        when 'approve_deliverables' then member.can_approve_deliverables
+        when 'manage_assets' then member.can_manage_assets
+        when 'comment' then member.can_comment
+        else false
+      end
+  )
+  or (
+    flag_name in ('edit', 'manage_members', 'manage_assets', 'comment')
+    and exists (
+      select 1
+      from public.projects project
+      where project.id = target_project
+        and private.is_org_admin(project.organization_id)
+    )
+  );
+$function$
+

@@ -2,7 +2,10 @@
 
 import { useMemo, useState, useSyncExternalStore } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { PublicShare } from "@/components/shared/public-share"
 
+import { ProjectAdminAccess } from "@/components/projects/project-admin-access"
 import { useOrganization } from "@/components/auth/organization-provider"
 import { Badge } from "@/components/ui/badge"
 import { Button, buttonVariants } from "@/components/ui/button"
@@ -36,6 +39,7 @@ import type {
 import { refreshOrganizationProjects } from "@/lib/auth/project-list-refresh"
 import {
   getProjectEditAccess,
+  deleteOrganizationProject,
   setOrganizationProjectArchived,
   updateOrganizationProject,
 } from "@/lib/auth/project-update-actions"
@@ -81,6 +85,7 @@ function ProjectBody({
 }) {
   const [editOpen, setEditOpen] = useState(false)
   const [archiveOpen, setArchiveOpen] = useState(false)
+  const [deleteOpen, setDeleteOpen] = useState(false)
   const { snapshot, reload } = useProjectRecord(organizationId, projectId)
   const editAccess = useProjectEditAccess(organizationId, projectId)
   const editable = isEditableAccess(editAccess) ? editAccess : null
@@ -150,9 +155,10 @@ function ProjectBody({
               <Button type="button" variant="outline" onClick={() => setEditOpen(true)}>
                 Edit
               </Button>
-              <Button type="button" variant="outline" onClick={() => setArchiveOpen(true)}>
+              {editable.canArchive ? <Button type="button" variant="outline" onClick={() => setArchiveOpen(true)}>
                 {project.archivedAt ? "Restore" : "Archive"}
-              </Button>
+              </Button> : null}
+              {editable.canDelete ? <Button type="button" variant="destructive" onClick={() => setDeleteOpen(true)}>Delete project</Button> : null}
             </div>
           ) : null}
         </div>
@@ -163,7 +169,8 @@ function ProjectBody({
           Assets on their own pages are preview samples and are not linked to
           this project.
         </p>
-        {editable ? (
+        {editable?.canDelete ? <DeleteProjectDialog key={`${project.id}:${deleteOpen}`} open={deleteOpen} onOpenChange={setDeleteOpen} organizationId={organizationId} project={project} /> : null}
+        {editable?.canArchive ? (
           <ArchiveProjectDialog
             open={archiveOpen}
             organizationId={organizationId}
@@ -201,10 +208,58 @@ function ProjectBody({
           <Fact label="Updated" value={project.updatedOn} />
         </dl>
       </section>
+      <ProjectAdminAccess organizationId={organizationId} projectId={project.id} />
+      <PublicShare key={`${organizationId}:${project.id}`} resourceId={project.id} kind="project" />
       <ProjectTasksRecord organizationId={organizationId} projectId={project.id} />
-      <ProjectCampaignsRecord organizationId={organizationId} projectId={project.id} />
+      {project.historyAccess === "assigned_only" ? <p className="text-sm text-muted-foreground">Your access is limited to tasks assigned to you. Other project work and history are private.</p> : <ProjectCampaignsRecord organizationId={organizationId} projectId={project.id} />}
     </div>
   )
+}
+
+function DeleteProjectDialog({ open, onOpenChange, organizationId, project }: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  organizationId: string
+  project: OrganizationProject
+}) {
+  const router = useRouter()
+  const [confirmation, setConfirmation] = useState("")
+  const [pending, setPending] = useState(false)
+  const [message, setMessage] = useState<string | null>(null)
+  async function handleDelete() {
+    if (pending || confirmation !== project.name) return
+    setPending(true)
+    setMessage(null)
+    try {
+      const result = await deleteOrganizationProject({ organizationId, projectId: project.id, confirmationName: confirmation })
+      if (result.status === "updated") {
+        refreshOrganizationProjects()
+        router.replace("/projects")
+        return
+      }
+      setMessage(result.status === "invalid" ? result.message : result.status === "denied" ? "Only Super admin can delete projects." : "The project could not be deleted. Refresh and try again.")
+    } catch {
+      setMessage("The project could not be deleted. Refresh and try again.")
+    }
+    setPending(false)
+  }
+  return <Dialog open={open} onOpenChange={next => { if (!pending) onOpenChange(next) }}>
+    <DialogContent className="sm:max-w-md">
+      <DialogHeader>
+        <DialogTitle>Delete project permanently?</DialogTitle>
+        <DialogDescription>This permanently deletes {project.name}, its tasks, campaigns, deliverables, invitations, memberships and project activity. This cannot be undone. Linked library assets and their files are kept.</DialogDescription>
+      </DialogHeader>
+      <div className="grid gap-2">
+        <Label htmlFor="delete-project-confirmation">Type the project name: {project.name}</Label>
+        <Input id="delete-project-confirmation" autoComplete="off" value={confirmation} disabled={pending} onChange={event => setConfirmation(event.target.value)} />
+        {message ? <p role="alert" className="text-sm text-destructive">{message}</p> : null}
+      </div>
+      <DialogFooter>
+        <Button variant="outline" disabled={pending} onClick={() => onOpenChange(false)}>Cancel</Button>
+        <Button variant="destructive" disabled={pending || confirmation !== project.name} onClick={() => void handleDelete()}>{pending ? "Deleting…" : "Delete permanently"}</Button>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
 }
 
 function Fact({ label, value }: { label: string; value: string }) {

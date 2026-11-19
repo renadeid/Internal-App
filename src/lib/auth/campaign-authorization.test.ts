@@ -104,6 +104,7 @@ const harness = vi.hoisted(() => {
         project_id: ids.activeProject,
         profile_id: ids.admin,
         role: "project_manager",
+        history_access: "full_history",
         can_edit: true,
       },
       {
@@ -111,6 +112,7 @@ const harness = vi.hoisted(() => {
         project_id: ids.activeProject,
         profile_id: ids.member,
         role: "project_member",
+        history_access: "full_history",
         can_edit: false,
       },
       {
@@ -118,6 +120,7 @@ const harness = vi.hoisted(() => {
         project_id: ids.activeProject,
         profile_id: ids.viewer,
         role: "viewer",
+        history_access: "full_history",
         can_edit: false,
       },
       {
@@ -125,6 +128,7 @@ const harness = vi.hoisted(() => {
         project_id: ids.archivedProject,
         profile_id: ids.member,
         role: "project_member",
+        history_access: "full_history",
         can_edit: false,
       },
     ],
@@ -931,7 +935,7 @@ describe("updateOrganizationCampaign", () => {
     expect(
       harness.calls
         .filter((call) => call.table === "project_members")
-        .every((call) => call.columns === "role" || call.columns === "profile_id")
+        .every((call) => call.columns === "role, history_access" || call.columns === "profile_id")
     ).toBe(true)
   })
 
@@ -1194,7 +1198,7 @@ describe("fail-closed authorization", () => {
       expect.objectContaining({
         table: "organization_memberships",
         operation: "select",
-        columns: "organization_id",
+        columns: "organization_id, role",
         matched: 0,
         filters: [{ op: "eq", column: "profile_id", value: ids.admin }],
       }),
@@ -1229,7 +1233,7 @@ describe("fail-closed authorization", () => {
     await expect(run()).resolves.toEqual({ status: "denied" })
     expect(writes()).toEqual([])
     expect(
-      harness.calls.find((call) => call.table === "project_members" && call.columns === "role")
+      harness.calls.find((call) => call.table === "project_members" && call.columns === "role, history_access")
     ).toMatchObject({
       matched: 0,
       filters: [
@@ -1249,7 +1253,7 @@ describe("fail-closed authorization", () => {
     await expect(run()).resolves.toEqual({ status: "denied" })
     expect(writes()).toEqual([])
     expect(
-      harness.calls.find((call) => call.table === "project_members" && call.columns === "role")
+      harness.calls.find((call) => call.table === "project_members" && call.columns === "role, history_access")
     ).toMatchObject({
       matched: 2,
       filters: [
@@ -1356,4 +1360,49 @@ describe("calendar date validation", () => {
     expect(harness.clients.created).toBe(0)
     expect(writes()).toEqual([])
   })
+})
+
+
+describe("assigned-only project visibility", () => {
+ it.each([
+  ["create campaign", () => createOrganizationCampaign(validCreate)],
+  ["update campaign", () => updateOrganizationCampaign(validUpdate)],
+  ["change campaign status", () => setOrganizationCampaignStatus({ organizationId: ids.orgA, campaignId: ids.activeCampaign, status: "on_hold" })],
+ ] as const)("denies %s for a member without full history", async (_name, run) => {
+  signIn(ids.member)
+  const membership = harness.db.project_members.find((row) => row.profile_id === ids.member && row.project_id === ids.activeProject)
+  if (!membership) throw new Error("Missing project membership fixture")
+  membership.history_access = "assigned_only"
+  await expect(run()).resolves.toEqual({ status: "denied" })
+  expect(writes()).toEqual([])
+ })
+})
+
+
+describe("Admin role: view/edit existing work only", () => {
+ function signInAdmin() {
+  signIn(ids.member)
+  const membership = harness.db.organization_memberships.find(row => row.profile_id === ids.member)
+  if (!membership) throw new Error("Missing organization membership fixture")
+  membership.role = "admin"
+ }
+ it("does not offer campaign creation to Admin even with an existing project membership", async () => {
+  signInAdmin()
+  await expect(getCampaignCreationAccess(ids.orgA, ids.activeProject)).resolves.toEqual({ status: "ready", canCreate: false })
+  expect(writes()).toEqual([])
+ })
+ it("denies a direct campaign creation action before writing", async () => {
+  signInAdmin()
+  await expect(createOrganizationCampaign(validCreate)).resolves.toEqual({ status: "denied" })
+  expect(writes()).toEqual([])
+ })
+ it("lets Admin edit an existing campaign without individual project membership", async () => {
+  signInAdmin(); removeProjectMembership(ids.member, ids.activeProject)
+  await expect(updateOrganizationCampaign(validUpdate)).resolves.toEqual({ status: "updated" })
+  expect(writes()).toHaveLength(1)
+ })
+ it("lets Admin change the status of an existing campaign", async () => {
+  signInAdmin(); removeProjectMembership(ids.member, ids.activeProject)
+  await expect(setOrganizationCampaignStatus({ organizationId: ids.orgA, campaignId: ids.activeCampaign, status: "on_hold" })).resolves.toEqual({ status: "updated" })
+ })
 })

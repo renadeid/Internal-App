@@ -23,7 +23,7 @@ export function Header({
   onCreate: () => void
 }) {
   return (
-    <header className="sticky top-0 z-30 border-b border-border bg-card/95 backdrop-blur-sm">
+    <header className="roaya-masthead sticky top-0 z-30 border-b border-border">
       <div className="flex items-center gap-2 px-4 py-3 lg:gap-4 lg:px-6">
         <Button
           type="button"
@@ -48,7 +48,7 @@ export function Header({
             onClick={canCreate ? onCreate : undefined}
           >
             <Plus />
-            <span className="hidden sm:inline">Quick Create</span>
+            <span className="hidden sm:inline">Quick create</span>
           </Button>
           <NotificationsMenu />
           <UserMenu identity={identity} />

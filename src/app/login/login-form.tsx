@@ -1,15 +1,17 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { safeReturnPath } from "@/lib/auth/safe-return-path"
 import { createClient } from "@/lib/supabase/client"
 
 export function LoginForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState<string | null>(null)
@@ -39,7 +41,7 @@ export function LoginForm() {
     }
 
     setPending(false)
-    router.push("/")
+    router.push(safeReturnPath(searchParams.get("next")))
     router.refresh()
   }
 
@@ -49,6 +51,7 @@ export function LoginForm() {
         <Label htmlFor="email">Email</Label>
         <Input
           id="email"
+          className="h-11"
           name="email"
           type="email"
           autoComplete="email"
@@ -63,6 +66,7 @@ export function LoginForm() {
         <Label htmlFor="password">Password</Label>
         <Input
           id="password"
+          className="h-11"
           name="password"
           type="password"
           autoComplete="current-password"
@@ -77,7 +81,7 @@ export function LoginForm() {
           {error}
         </p>
       ) : null}
-      <Button type="submit" className="h-9 w-full" disabled={pending}>
+      <Button type="submit" className="h-11 w-full" disabled={pending}>
         {pending ? "Signing in…" : "Sign in"}
       </Button>
     </form>

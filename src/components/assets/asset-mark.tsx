@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 import { useState } from "react"
 import {
@@ -39,7 +39,7 @@ export function AssetMark({
   const showImage = Boolean(imageUrl && failedUrl !== imageUrl)
 
   return (
-    <div className="relative flex aspect-[16/10] items-center justify-center overflow-hidden rounded-lg bg-[#F8FAFC]">
+    <div className="relative flex aspect-[16/10] items-center justify-center overflow-hidden rounded-lg bg-muted">
       {showImage && imageUrl ? (
         <img
           key={imageUrl}
@@ -49,8 +49,8 @@ export function AssetMark({
           onError={() => setFailedUrl(imageUrl)}
         />
       ) : (
-        <span className="flex size-12 items-center justify-center rounded-xl bg-[#2563EB]/10 text-[#1D4ED8]">
-          <Icon className="size-5" aria-hidden />
+        <span className="roaya-icon-tile flex size-12 items-center justify-center rounded-xl">
+          <Icon className="size-6" aria-hidden />
           <span className="sr-only">{name}</span>
         </span>
       )}

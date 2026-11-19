@@ -2,6 +2,7 @@
 
 import { useMemo, useSyncExternalStore } from "react"
 
+import { subscribeProjectListRefresh } from "@/lib/auth/project-list-refresh"
 import { getProjectCreationAccess } from "@/lib/auth/project-creation-actions"
 import type { ProjectCreationAccess } from "@/lib/auth/project-creation"
 
@@ -49,19 +50,24 @@ function createAccessStore(organizationId: string | null) {
     subscribe(listener: () => void) {
       listeners.add(listener)
       if (!organizationId) return () => listeners.delete(listener)
-      const requestGeneration = ++generation
-      void getProjectCreationAccess(organizationId)
-        .then((result) => {
-          if (requestGeneration !== generation) return
-          current = result
-          listeners.forEach((item) => item())
-        })
-        .catch(() => {
-          if (requestGeneration !== generation) return
-          current = { status: "error" }
-          listeners.forEach((item) => item())
-        })
+      const reload = () => {
+        const requestGeneration = ++generation
+        void getProjectCreationAccess(organizationId)
+          .then((result) => {
+            if (requestGeneration !== generation) return
+            current = result
+            listeners.forEach((item) => item())
+          })
+          .catch(() => {
+            if (requestGeneration !== generation) return
+            current = { status: "error" }
+            listeners.forEach((item) => item())
+          })
+      }
+      const unsubscribeRefresh = subscribeProjectListRefresh(reload)
+      reload()
       return () => {
+        unsubscribeRefresh()
         listeners.delete(listener)
         generation += 1
       }

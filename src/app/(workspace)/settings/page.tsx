@@ -1,3 +1,4 @@
+import { SuperAdminPanel } from "@/components/settings/super-admin-panel"
 import type { Metadata } from "next"
 import { redirect } from "next/navigation"
 
@@ -18,8 +19,9 @@ export default async function SettingsPage() {
     <div className="flex flex-col gap-8">
       <PageIntro
         title="Settings"
-        description="Your signed-in profile. Saved preferences arrive in a later phase."
+        description="Manage your profile and organization access."
       />
+      <SuperAdminPanel />
       <div className="grid gap-4 lg:grid-cols-2">
         <section className="rounded-xl border border-border bg-card p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
           <h2 className="text-sm font-semibold">Profile</h2>
@@ -61,7 +63,7 @@ export default async function SettingsPage() {
             </div>
             <div>
               <dt className="text-muted-foreground">Workspace</dt>
-              <dd className="mt-0.5">Company Hub</dd>
+              <dd className="mt-0.5">Roaya Connect</dd>
             </div>
             <div>
               <dt className="text-muted-foreground">Active department</dt>

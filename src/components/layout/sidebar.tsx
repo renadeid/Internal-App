@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation"
 import { PanelLeftClose, PanelLeftOpen } from "lucide-react"
 
 import { useOrganization } from "@/components/auth/organization-provider"
+import { BrandLogo } from "@/components/shared/brand-logo"
 import { Button } from "@/components/ui/button"
 import {
   Select,
@@ -40,24 +41,18 @@ export function SidebarPanel({
   onToggle,
 }: SidebarPanelProps) {
   return (
-    <div className="flex h-full flex-col bg-card">
-      <div className={cn("flex items-center gap-3 px-4 py-5", collapsed && "px-3")}>
+    <div className="roaya-sidebar flex h-full flex-col">
+      <div className={cn("flex flex-col gap-2 px-4 py-5", collapsed && "px-3")}>
         <Link
           href="/"
           onClick={onNavigate}
-          className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-xs font-semibold text-primary-foreground focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
-          aria-label="Company Hub"
+          className="flex w-fit items-center gap-3 rounded-lg focus-visible:ring-2 focus-visible:ring-ring"
+          aria-label="Roaya Connect"
         >
-          CH
+          <BrandLogo compact={collapsed} className={collapsed ? undefined : "w-32"} />
+          {!collapsed ? <span className="border-s border-navy-200 ps-3 text-xs font-semibold text-navy-600">Connect</span> : null}
         </Link>
         <div className={cn("min-w-0 flex-1", collapsed && "sr-only")}>
-          <Link
-            href="/"
-            onClick={onNavigate}
-            className="block truncate text-sm font-semibold tracking-tight text-foreground focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
-          >
-            Company Hub
-          </Link>
           <OrganizationLabel />
         </div>
       </div>
@@ -173,7 +168,7 @@ function NavGroup({
             aria-current={active ? "page" : undefined}
             onClick={onNavigate}
             className={cn(
-              "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
+              "roaya-nav-link flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring",
               active && "bg-sidebar-accent text-sidebar-accent-foreground hover:bg-sidebar-accent",
               collapsed && "justify-center px-2"
             )}
@@ -181,7 +176,7 @@ function NavGroup({
             <Icon className="size-4 shrink-0" />
             <span className={cn("truncate", collapsed && "sr-only")}>{item.label}</span>
             {item.badge && !collapsed ? (
-              <span className="ml-auto rounded-full bg-[#8B5CF6]/10 px-1.5 py-0.5 text-[10px] font-medium text-[#6D28D9]">
+              <span className="ml-auto rounded-full bg-purple-500/10 px-1.5 py-0.5 text-[10px] font-medium text-purple-600">
                 {item.badge}
               </span>
             ) : null}
@@ -215,7 +210,7 @@ export function Sidebar({
   return (
     <aside
       className={cn(
-        "sticky top-0 hidden h-svh shrink-0 border-r border-border transition-[width] duration-200 ease-out motion-reduce:transition-none lg:block",
+        "sticky top-0 hidden h-svh shrink-0 border-e border-border transition-[width] duration-200 ease-out motion-reduce:transition-none lg:block",
         collapsed ? "w-[72px]" : "w-64"
       )}
     >

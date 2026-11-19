@@ -64,7 +64,16 @@ export async function getOrganizationProject(
   if (!row.data) return { status: "missing" }
   const projects = await withRelatedLabels(context.supabase, organizationId, [row.data])
   if (!projects || !projects[0]) return { status: "error" }
-  return { status: "ready", project: projects[0] }
+  const { data: identity } = await context.supabase.auth.getUser()
+  if (!identity.user) return { status: "rejected" }
+  const membership = await context.supabase.from("organization_memberships").select("role")
+    .eq("organization_id", organizationId).eq("profile_id", identity.user.id).maybeSingle()
+  if (membership.error || !membership.data) return { status: "error" }
+  if (membership.data.role === "org_admin" || membership.data.role === "admin") return { status: "ready", project: { ...projects[0], historyAccess: "full_history" } }
+  const projectMember = await context.supabase.from("project_members").select("history_access")
+    .eq("organization_id", organizationId).eq("project_id", projectId).eq("profile_id", identity.user.id).maybeSingle()
+  if (projectMember.error || !projectMember.data) return { status: "error" }
+  return { status: "ready", project: { ...projects[0], historyAccess: projectMember.data.history_access } }
 }
 
 async function openOrganization(organizationId: string) {

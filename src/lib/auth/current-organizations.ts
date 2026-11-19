@@ -14,7 +14,7 @@ export async function getAccessibleOrganizations(): Promise<OrganizationAccess> 
 
   const memberships = await supabase
     .from("organization_memberships")
-    .select("organization_id")
+    .select("organization_id, role")
     .eq("profile_id", user.id)
 
   if (memberships.error || !memberships.data) return { status: "unavailable" }
@@ -40,6 +40,7 @@ export async function getAccessibleOrganizations(): Promise<OrganizationAccess> 
     .map((organization) => ({
       id: organization.id,
       name: organization.name.trim(),
+      role: memberships.data.find(member => member.organization_id === organization.id)?.role,
     }))
     .sort((left, right) => left.name.localeCompare(right.name))
 

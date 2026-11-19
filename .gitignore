@@ -47,3 +47,5 @@ next-env.d.ts
 
 # Local design backups
 *.design-backup
+.vercel
+.env*

@@ -78,7 +78,7 @@ export function ProjectTasks({ projectId }: { projectId: string }) {
       {visible.length === 0 ? (
         <EmptyNote>No tasks match these filters.</EmptyNote>
       ) : (
-        <ul className="rounded-xl border border-border bg-card px-4">
+        <ul className="roaya-glass rounded-2xl border border-border bg-card px-4">
           {visible.map((task) => (
               <TaskRow
               key={task.id}

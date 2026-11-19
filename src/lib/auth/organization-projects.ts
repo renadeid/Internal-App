@@ -3,6 +3,7 @@ import type { Database } from "@/lib/supabase/database"
 export type ProjectStatusValue = Database["public"]["Enums"]["project_status"]
 
 export type OrganizationProject = {
+  historyAccess?: "full_history" | "assigned_only"
   id: string
   name: string
   description: string
@@ -58,6 +59,8 @@ export type ProjectEditAccess =
   | {
       status: "ready"
       canEdit: true
+      canArchive: boolean
+      canDelete?: boolean
       departments: { id: string; name: string }[]
       owners: { id: string; name: string }[]
     }

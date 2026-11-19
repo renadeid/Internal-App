@@ -1,0 +1,18 @@
+# Supply credentials through Vercel environment settings.
+.env*
+.git
+.next
+node_modules
+coverage
+*.tsbuildinfo
+*.review-backup
+*.design-backup
+*.timeouts-backup
+*.bak
+
+# Local database review material and scripts are not application runtime files.
+/supabase
+/scripts
+/docs
+*.sql
+AGENTS.md

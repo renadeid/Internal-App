@@ -18,7 +18,7 @@ export function ProjectActivity({ projectId }: { projectId: string }) {
   }
 
   return (
-    <ul className="rounded-xl border border-border bg-card px-4 py-2">
+    <ul className="roaya-glass rounded-2xl border border-border bg-card px-4 py-2">
       {items.map((item) => (
         <ActivityFeedItem key={item.id} item={item} />
       ))}

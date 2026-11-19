@@ -10,7 +10,7 @@ export type CurrentIdentity = UserIdentity & {
   profileId: string
 }
 
-const fallbackAvatarColor = "#2563EB"
+const fallbackAvatarColor = "#3D5A80"
 
 export function toUserIdentity(input: {
   authEmail: string | null

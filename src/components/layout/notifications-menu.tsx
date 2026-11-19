@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { Bell } from "lucide-react"
 
+import { ProjectInvitationNotificationItems, useProjectInvitations } from "@/components/projects/project-invitations"
 import { useWorkspace } from "@/components/workspace/workspace-provider"
 import { Button } from "@/components/ui/button"
 import {
@@ -17,6 +18,8 @@ import {
 import { cn } from "@/lib/utils"
 
 export function NotificationsMenu() {
+  const { invitations, refresh } = useProjectInvitations()
+
   const {
     notifications,
     unreadCount,
@@ -25,7 +28,7 @@ export function NotificationsMenu() {
   } = useWorkspace()
 
   return (
-    <DropdownMenu>
+    <DropdownMenu onOpenChange={(open) => { if (open) void refresh() }}>
       <DropdownMenuTrigger
         render={
           <Button
@@ -35,24 +38,24 @@ export function NotificationsMenu() {
             className="relative"
             aria-label={
               unreadCount > 0
-                ? `Notifications, ${unreadCount} unread`
+                ? `Notifications, ${invitations.length} project invitations, ${unreadCount} preview unread`
                 : "Notifications"
             }
           />
         }
       >
         <Bell />
-        {unreadCount > 0 ? (
-          <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#8B5CF6] px-1 text-[10px] font-semibold text-white">
-            {unreadCount}
+        {unreadCount + invitations.length > 0 ? (
+          <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-purple-500 px-1 text-[10px] font-semibold text-white">
+            {unreadCount + invitations.length}
           </span>
         ) : null}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-80!">
         <div className="flex items-center justify-between gap-3 px-1.5 py-1">
-          <DropdownMenuLabel className="p-0 text-sm text-foreground">
+          <span className="p-0 text-sm font-semibold text-foreground">
             Notifications
-          </DropdownMenuLabel>
+          </span>
           {unreadCount > 0 ? (
             <button
               type="button"
@@ -66,7 +69,10 @@ export function NotificationsMenu() {
           )}
         </div>
         <DropdownMenuSeparator />
+        <ProjectInvitationNotificationItems />
+        <DropdownMenuSeparator />
         <DropdownMenuGroup>
+          <DropdownMenuLabel>Preview notifications</DropdownMenuLabel>
           {notifications.length === 0 ? (
             <p className="px-2 py-6 text-center text-sm text-muted-foreground">
               Nothing new in the workspace.
@@ -82,7 +88,7 @@ export function NotificationsMenu() {
                 <span
                   className={cn(
                     "mt-1.5 size-1.5 shrink-0 rounded-full",
-                    item.read ? "bg-transparent" : "bg-[#8B5CF6]"
+                    item.read ? "bg-transparent" : "bg-purple-500"
                   )}
                   aria-hidden
                 />

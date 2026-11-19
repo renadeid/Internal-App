@@ -73,7 +73,7 @@ export function TasksView() {
           ))}
         </div>
       </div>
-      <div className="rounded-xl border border-border bg-card px-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)] sm:px-5">
+      <div className="roaya-glass rounded-2xl border border-border bg-card px-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)] sm:px-5">
         {visible.length === 0 ? (
           <p className="py-10 text-sm text-muted-foreground">
             No tasks match this filter.

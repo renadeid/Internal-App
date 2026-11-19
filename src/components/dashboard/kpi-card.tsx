@@ -28,7 +28,7 @@ export function KpiCard({
   accent?: "blue" | "violet"
 }) {
   const card = (
-    <Card className="h-full shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-shadow hover:shadow-[0_8px_20px_rgba(15,23,42,0.06)]">
+    <Card className={cn("h-full", href && "roaya-interactive")}>
         <CardHeader>
           <CardDescription className="text-sm font-medium">{label}</CardDescription>
           <CardTitle className="text-3xl font-semibold tracking-tight tabular-nums">
@@ -37,13 +37,13 @@ export function KpiCard({
           <CardAction>
             <span
               className={cn(
-                "flex size-8 items-center justify-center rounded-lg",
+                "roaya-icon-tile flex size-10 items-center justify-center rounded-xl",
                 accent === "violet"
-                  ? "bg-[#8B5CF6]/10 text-[#6D28D9]"
-                  : "bg-[#2563EB]/10 text-[#1D4ED8]"
+                  ? "bg-purple-500/10 text-purple-600"
+                  : "bg-navy-500/10 text-navy-600"
               )}
             >
-              <Icon className="size-4" />
+              <Icon className="size-5" aria-hidden />
             </span>
           </CardAction>
         </CardHeader>

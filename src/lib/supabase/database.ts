@@ -5,6 +5,12 @@
 export type Database = {
   public: {
     Tables: {
+      project_invitations: {
+        Row: { id: string; organization_id: string; project_id: string; profile_id: string; created_at: string; history_access: "full_history" | "assigned_only"; can_update_assigned_status: boolean; task_ids: string[] }
+        Insert: { organization_id: string; project_id: string; profile_id: string; history_access?: "full_history" | "assigned_only" }
+        Update: { id?: string }
+        Relationships: []
+      }
       organizations: {
         Row: {
           id: string
@@ -153,6 +159,8 @@ export type Database = {
           project_id: string
           profile_id: string
           role: Database["public"]["Enums"]["project_role"]
+          history_access: "full_history" | "assigned_only"
+          can_update_assigned_status: boolean
           can_edit: boolean
           can_manage_members: boolean
           can_approve_deliverables: boolean
@@ -166,6 +174,8 @@ export type Database = {
           project_id: string
           profile_id: string
           role: Database["public"]["Enums"]["project_role"]
+          history_access?: "full_history" | "assigned_only"
+          can_update_assigned_status?: boolean
           can_edit?: boolean
           can_manage_members?: boolean
           can_approve_deliverables?: boolean
@@ -179,6 +189,8 @@ export type Database = {
           project_id?: string
           profile_id?: string
           role?: Database["public"]["Enums"]["project_role"]
+          history_access?: "full_history" | "assigned_only"
+          can_update_assigned_status?: boolean
           can_edit?: boolean
           can_manage_members?: boolean
           can_approve_deliverables?: boolean
@@ -343,10 +355,21 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      admin_invite_project_tasks: { Args: { target_organization: string; target_project: string; target_profile: string; target_history_access: string; selected_tasks: string[]; allow_status_update: boolean }; Returns: undefined }
+      set_assigned_task_status: { Args: { target_organization: string; target_project: string; target_task: string; next_status: Database["public"]["Enums"]["task_status"] }; Returns: boolean }
+      my_project_task_invitations: { Args: { target_organization: string }; Returns: { id: string; can_update_assigned_status: boolean; task_titles: string[] }[] }
+      create_viewer_link: { Args: { target_organization: string; target_resource: string; resource_kind: string; link_token: string; asset_snapshot?: Record<string, unknown> }; Returns: string }
+      read_viewer_link: { Args: { link_token: string }; Returns: unknown }
+      manage_viewer_links: { Args: { target_organization: string; target_resource: string; resource_kind: string; revoke_id?: string }; Returns: { id: string; created_at: string; expires_at: string }[] }
+      admin_delete_project: { Args: { target_organization: string; target_project: string; confirmation_name: string }; Returns: boolean }
+      my_project_invitations: { Args: { target_organization: string }; Returns: { id: string; project_id: string; project_name: string; history_access: "full_history" | "assigned_only"; can_update_assigned_status: boolean; task_ids: string[] }[] }
+      admin_invite_project_member: { Args: { target_organization: string; target_project: string; target_profile: string; target_history_access?: string }; Returns: undefined }
+      admin_create_project: { Args: { payload: Record<string, unknown> }; Returns: string }
+      accept_project_invitation: { Args: { invitation_id: string }; Returns: string }
+      admin_add_member: { Args: { target_organization: string; member_email: string }; Returns: undefined }
     }
     Enums: {
-      org_role: "org_admin" | "member" | "viewer"
+      org_role: "org_admin" | "admin" | "team_lead" | "member" | "viewer"
       department_role: "manager" | "member"
       project_role: "project_manager" | "project_member" | "viewer"
       project_status: "planning" | "in_progress" | "in_review" | "on_hold"

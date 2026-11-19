@@ -19,6 +19,33 @@ const projectStatuses = [
   "on_hold",
 ] as const satisfies readonly ProjectStatusValue[]
 
+export async function deleteOrganizationProject(input: {
+  organizationId: string
+  projectId: string
+  confirmationName: string
+}): Promise<UpdateProjectResult> {
+  if (!isUuid(input.organizationId) || !isUuid(input.projectId) || typeof input.confirmationName !== "string") {
+    return { status: "invalid", message: "Enter a valid project and its exact name." }
+  }
+  const supabase = await openSelectedOrganization(input.organizationId)
+  if (supabase.status !== "ready") return supabase
+  const { data } = await supabase.client.auth.getUser()
+  if (!data.user) return { status: "rejected" }
+  const membership = await supabase.client.from("organization_memberships").select("role")
+    .eq("organization_id", input.organizationId).eq("profile_id", data.user.id).maybeSingle()
+  if (membership.error) return { status: "error" }
+  if (membership.data?.role !== "org_admin") return { status: "denied" }
+  const result = await supabase.client.rpc("admin_delete_project", {
+    target_organization: input.organizationId,
+    target_project: input.projectId,
+    confirmation_name: input.confirmationName,
+  })
+  if (result.error?.code === "22023") return { status: "invalid", message: "Enter the exact current project name." }
+  if (result.error?.code === "42501") return { status: "denied" }
+  if (result.error) return { status: "error" }
+  return { status: result.data ? "updated" : "unavailable" }
+}
+
 export async function getProjectEditAccess(
   organizationId: string,
   projectId: string
@@ -69,6 +96,8 @@ export async function getProjectEditAccess(
   return {
     status: "ready",
     canEdit: true,
+    canArchive: allowed !== "admin",
+    canDelete: allowed === "super_admin",
     departments: departments.data
       .map((department) => ({
         id: department.id,
@@ -208,7 +237,7 @@ export async function setOrganizationProjectArchived(
     user.id
   )
   if (allowed === "error") return { status: "error" }
-  if (!allowed) return { status: "denied" }
+  if (!allowed || allowed === "admin") return { status: "denied" }
 
   const updated = await supabase.client
     .from("projects")
@@ -242,7 +271,8 @@ async function canEditProject(
     .maybeSingle()
   if (membership.error) return "error" as const
   if (!membership.data) return false
-  if (membership.data.role === "org_admin") return true
+  if (membership.data.role === "org_admin") return "super_admin" as const
+  if (membership.data.role === "admin") return "admin" as const
   if (membership.data.role === "viewer") return false
 
   const projectMember = await supabase

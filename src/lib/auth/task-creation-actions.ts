@@ -88,7 +88,9 @@ export async function getTaskCreationAccess(
     })
     .sort((left, right) => left.name.localeCompare(right.name))
 
-  return { status: "ready", canCreate: true, assignees }
+  return allowed === "admin"
+    ? { status: "ready", canCreate: false, canEdit: true, canArchive: false, assignees }
+    : { status: "ready", canCreate: true, canEdit: true, canArchive: allowed !== "team_lead", assignees }
 }
 
 export async function createOrganizationTask(
@@ -145,7 +147,7 @@ export async function createOrganizationTask(
     user.id
   )
   if (allowed === "error") return { status: "error" }
-  if (!allowed) return { status: "denied" }
+  if (!allowed || allowed === "admin") return { status: "denied" }
 
   if (assigneeId) {
     const assignee = await supabase.client
@@ -334,7 +336,7 @@ export async function setOrganizationTaskArchived(
     user.id
   )
   if (allowed === "error") return { status: "error" }
-  if (!allowed) return { status: "denied" }
+  if (!allowed || allowed === "admin" || allowed === "team_lead") return { status: "denied" }
 
   const task = await supabase.client
     .from("tasks")
@@ -408,7 +410,11 @@ export async function setOrganizationTaskStatus(
     user.id
   )
   if (allowed === "error") return { status: "error" }
-  if (!allowed) return { status: "denied" }
+  if (!allowed) {
+    const result = await supabase.client.rpc("set_assigned_task_status", { target_organization: input.organizationId, target_project: input.projectId, target_task: input.taskId, next_status: input.status })
+    if (result.error) return mapUpdateError(result.error.code)
+    return { status: result.data ? "updated" : "unavailable" }
+  }
 
   const task = await supabase.client
     .from("tasks")
@@ -470,17 +476,19 @@ async function canWriteProject(
   if (membership.error) return "error" as const
   if (!membership.data) return false
   if (membership.data.role === "org_admin") return true
+  if (membership.data.role === "admin") return "admin" as const
   if (membership.data.role === "viewer") return false
 
   const projectMember = await supabase
     .from("project_members")
-    .select("role")
+    .select("role, history_access")
     .eq("organization_id", organizationId)
     .eq("project_id", projectId)
     .eq("profile_id", userId)
     .maybeSingle()
   if (projectMember.error) return "error" as const
-  return Boolean(projectMember.data && projectMember.data.role !== "viewer")
+  const allowed = Boolean(projectMember.data && projectMember.data.role !== "viewer" && projectMember.data.history_access !== "assigned_only")
+  return allowed && membership.data.role === "team_lead" ? "team_lead" as const : allowed
 }
 
 async function openSelectedOrganization(organizationId: string) {

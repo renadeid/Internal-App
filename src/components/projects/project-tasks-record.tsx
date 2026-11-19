@@ -1,4 +1,5 @@
 "use client"
+import { AssignedTaskStatus } from "@/components/tasks/assigned-task-status"
 
 import { useMemo, useState, useSyncExternalStore } from "react"
 
@@ -66,6 +67,7 @@ export function ProjectTasksRecord({
   const snapshot = useProjectTasks(organizationId, projectId)
   const access = useTaskCreationAccess(organizationId, projectId)
   const creatable = isCreatableAccess(access) ? access : null
+  const editable = access.status === "ready" && "canEdit" in access && access.canEdit ? access : null
   const archivedCount =
     snapshot.status === "ready"
       ? snapshot.tasks.filter((task) => task.archivedAt).length
@@ -121,14 +123,14 @@ export function ProjectTasksRecord({
           onSaved={() => refreshOrganizationTasks()}
         />
       ) : null}
-      {creatable && editing ? (
+      {editable && editing ? (
         <TaskDraftDialog
           key={editing.id}
           open
           task={editing}
           organizationId={organizationId}
           projectId={projectId}
-          assignees={creatable.assignees}
+          assignees={editable!.assignees}
           onOpenChange={(next) => {
             if (!next) setEditing(null)
           }}
@@ -190,13 +192,13 @@ export function ProjectTasksRecord({
                 task={task}
                 showProject={false}
                 onEdit={
-                  creatable && !task.archivedAt ? () => setEditing(task) : undefined
+                  editable && task.canWrite && !task.archivedAt ? () => setEditing(task) : undefined
                 }
                 onArchive={
-                  creatable && !task.archivedAt ? () => setArchiving(task) : undefined
+                  editable?.canArchive && !task.archivedAt ? () => setArchiving(task) : undefined
                 }
                 onRestore={
-                  creatable && task.archivedAt ? () => setArchiving(task) : undefined
+                  editable?.canArchive && task.archivedAt ? () => setArchiving(task) : undefined
                 }
               />
             ))}
@@ -246,11 +248,11 @@ export function TaskRecord({
             </Button>
           ) : null}
           {task.archivedAt ? <Badge variant="secondary">Archived</Badge> : null}
-          {statusControl ?? (
+          {statusControl ?? (task.canUpdateStatus && !task.canWrite ? <AssignedTaskStatus task={task} /> : (
             <Badge variant="secondary" className={taskStatusClass[status]}>
               {status}
             </Badge>
-          )}
+          ))}
         </div>
       </div>
       {showProject ? (
@@ -258,6 +260,7 @@ export function TaskRecord({
           {task.projectName ?? "Project unavailable"}
         </p>
       ) : null}
+      {task.description ? <p className="mt-2 max-w-3xl whitespace-pre-wrap text-sm leading-6 text-muted-foreground">{task.description}</p> : null}
       <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
         <span className={priorityClass[priority]}>{priority} priority</span>
         <span className="text-muted-foreground">

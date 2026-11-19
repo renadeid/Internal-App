@@ -70,7 +70,7 @@ function PeopleList({
       {snapshot.people.map((person) => (
         <li
           key={person.profileId}
-          className="rounded-xl border border-border bg-card p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)]"
+          className="roaya-glass rounded-2xl border border-border bg-card p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)]"
         >
           <div className="flex items-center gap-3">
             <Avatar>
@@ -109,7 +109,9 @@ function PeopleMessage({ message }: { message: string }) {
 }
 
 function organizationRoleLabel(role: OrganizationRole) {
-  if (role === "org_admin") return "Organization admin"
+  if (role === "org_admin") return "Super admin"
+  if (role === "admin") return "Admin"
+  if (role === "team_lead") return "Owner (Team lead)"
   if (role === "member") return "Member"
   if (role === "viewer") return "Viewer"
   return role

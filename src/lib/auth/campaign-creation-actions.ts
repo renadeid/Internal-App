@@ -168,12 +168,12 @@ export async function createOrganizationCampaign(
 }
 
 function writableProjectIds(
-  orgRole: "org_admin" | "member" | "viewer",
+  orgRole: "org_admin" | "admin" | "team_lead" | "member" | "viewer",
   activeIds: string[],
   memberships: { project_id: string; role: "project_manager" | "project_member" | "viewer" }[]
 ) {
   const writable = new Set<string>()
-  if (orgRole === "viewer") return writable
+  if (orgRole === "viewer" || orgRole === "admin") return writable
   if (orgRole === "org_admin") {
     for (const projectId of activeIds) writable.add(projectId)
     return writable
@@ -313,17 +313,17 @@ async function canWriteProject(
     return "error" as const
   }
   if (membership.data[0].role === "org_admin") return true
-  if (membership.data[0].role === "viewer") return false
+  if (membership.data[0].role === "viewer" || membership.data[0].role === "admin") return false
 
   const projectMember = await supabase
     .from("project_members")
-    .select("role")
+    .select("role, history_access")
     .eq("organization_id", organizationId)
     .eq("project_id", projectId)
     .eq("profile_id", userId)
   if (projectMember.error || !projectMember.data) return "error" as const
   if (projectMember.data.length !== 1) return false
-  return projectMember.data[0].role !== "viewer"
+  return projectMember.data[0].role !== "viewer" && projectMember.data[0].history_access !== "assigned_only"
 }
 
 async function openSelectedOrganization(organizationId: string) {

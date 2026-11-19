@@ -27,6 +27,10 @@ import type { ProjectCreationAccess } from "@/lib/auth/project-creation"
 import { refreshOrganizationProjects } from "@/lib/auth/project-list-refresh"
 import { projectSlugFromName } from "@/lib/auth/project-slug"
 
+import type { ProjectAccessMode, ProjectPermissions, ProjectHistoryAccess } from "@/lib/auth/super-admin-types"
+import { HistoryAccessField } from "@/components/projects/history-access-field"
+import { ProjectAccessFields } from "@/components/projects/project-access-fields"
+
 type CreateAccess = Extract<ProjectCreationAccess, { canCreate: true }>
 
 export function CreateProjectDialog({
@@ -42,6 +46,10 @@ export function CreateProjectDialog({
   organizationName: string
   access: CreateAccess
 }) {
+  const [historyAccess, setHistoryAccess] = useState<ProjectHistoryAccess>("full_history")
+  const [accessMode, setAccessMode] = useState<ProjectAccessMode>("members")
+  const [memberIds, setMemberIds] = useState<string[]>([])
+  const [permissions, setPermissions] = useState<ProjectPermissions>({ edit: false, manageMembers: false, approve: false, manageAssets: false })
   const router = useRouter()
   const [name, setName] = useState("")
   const [description, setDescription] = useState("")
@@ -60,6 +68,10 @@ export function CreateProjectDialog({
   const slug = projectSlugFromName(name)
 
   function reset() {
+    setHistoryAccess("full_history")
+    setAccessMode("members")
+    setMemberIds([])
+    setPermissions({ edit: false, manageMembers: false, approve: false, manageAssets: false })
     setName("")
     setDescription("")
     setLeadDepartmentId(access.departments.length === 1 ? access.departments[0].id : null)
@@ -108,10 +120,15 @@ export function CreateProjectDialog({
       return
     }
 
+    if (access.isSuperAdmin && ["members", "custom", "invitation"].includes(accessMode) && memberIds.length === 0) {
+      setMessage("Select at least one member.")
+      return
+    }
     setPending(true)
     setMessage(null)
     try {
       const result = await createOrganizationProject({
+        ...(access.isSuperAdmin ? { accessMode, memberIds, permissions, historyAccess } : {}),
         organizationId,
         name: trimmedName,
         description,
@@ -138,12 +155,11 @@ export function CreateProjectDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader className="pr-8">
           <DialogTitle>Create project</DialogTitle>
           <DialogDescription>
-            Save a project in {organizationName}. Editing and archiving stay
-            unavailable.
+            Create a project in {organizationName} and choose who can access it.
           </DialogDescription>
         </DialogHeader>
         <form id="create-project-form" className="grid gap-4" onSubmit={handleSubmit}>
@@ -235,6 +251,8 @@ export function CreateProjectDialog({
               </SelectContent>
             </Select>
           </div>
+          {access.isSuperAdmin ? <HistoryAccessField value={historyAccess} onChange={setHistoryAccess} disabled={pending} /> : null}
+          {access.isSuperAdmin ? <ProjectAccessFields restricted={historyAccess === "assigned_only"} members={access.owners} mode={accessMode} onModeChange={setAccessMode} selected={memberIds} onSelectedChange={setMemberIds} permissions={permissions} onPermissionsChange={setPermissions} disabled={pending} /> : null}
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="grid gap-2">
               <Label htmlFor="project-start">Start</Label>

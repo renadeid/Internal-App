@@ -184,7 +184,7 @@ export function AssetFormDialog({
             </div>
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="asset-url">External URL</Label>
+            <Label htmlFor="asset-url">File or external URL</Label>
             <Input
               id="asset-url"
               value={draft.url}
@@ -203,7 +203,7 @@ export function AssetFormDialog({
               </p>
             ) : (
               <p id="asset-url-hint" className="text-xs text-muted-foreground">
-                Required for external links. Image URLs can show a preview.
+                Use a direct file URL to enable Download. Website and shared-document links may require downloading from the source. Image URLs can show a preview.
               </p>
             )}
           </div>

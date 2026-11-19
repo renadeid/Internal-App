@@ -3,6 +3,7 @@
 import { useState } from "react"
 
 import { useOrganization } from "@/components/auth/organization-provider"
+import { ProjectInvitationsBanner, ProjectInvitationsProvider } from "@/components/projects/project-invitations"
 import { CreateProjectDialog } from "@/components/layout/create-project-dialog"
 import { Header } from "@/components/layout/header"
 import {
@@ -34,7 +35,8 @@ export function AppShell({
   const [createOpen, setCreateOpen] = useState(false)
 
   return (
-    <div className="flex min-h-svh bg-background text-foreground">
+    <ProjectInvitationsProvider key={identity.email}>
+    <div className="roaya-workspace flex min-h-svh text-foreground">
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-50 focus:rounded-lg focus:bg-card focus:px-3 focus:py-2 focus:shadow"
@@ -51,7 +53,7 @@ export function AppShell({
           className="w-64 gap-0 p-0 sm:max-w-none"
         >
           <SheetHeader className="sr-only">
-            <SheetTitle>Company Hub</SheetTitle>
+            <SheetTitle>Roaya Connect</SheetTitle>
             <SheetDescription>Primary navigation</SheetDescription>
           </SheetHeader>
           <SidebarPanel onNavigate={() => setMobileOpen(false)} />
@@ -66,7 +68,7 @@ export function AppShell({
           onCreate={() => setCreateOpen(true)}
         />
         <main id="main-content" className="flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-          <div className="mx-auto w-full max-w-7xl">{children}</div>
+          <div className="mx-auto w-full max-w-7xl"><ProjectInvitationsBanner />{children}</div>
         </main>
       </div>
       {activeOrganization && creation.status === "ready" && creation.canCreate ? (
@@ -80,5 +82,6 @@ export function AppShell({
         />
       ) : null}
     </div>
+    </ProjectInvitationsProvider>
   )
 }

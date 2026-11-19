@@ -80,7 +80,7 @@ export async function getProjectCreationAccess(
       status: "ready",
       canCreate: false,
       reason:
-        "Only an organization admin or a manager of the lead department can create a project.",
+        membership.data.role === "admin" ? "Admins can view and edit existing work, but cannot create projects." : "Only a Super admin or a manager of the lead department can create a project.",
     }
   }
   if (selectable.length === 0) {
@@ -130,6 +130,7 @@ export async function getProjectCreationAccess(
   return {
     status: "ready",
     canCreate: true,
+    isSuperAdmin: membership.data.role === "org_admin",
     currentUserId: user.id,
     departments: selectable,
     owners,
@@ -215,6 +216,17 @@ export async function createOrganizationProject(
   if (allowed === "error") return { status: "error" }
   if (!allowed) return { status: "denied" }
 
+  if (input.accessMode) {
+    if (membership.data.role !== "org_admin") return { status: "denied" }
+    const result = await supabase.client.rpc("admin_create_project", {
+      payload: { ...input, slug, name, description, memberIds: input.memberIds ?? [] },
+    })
+    if (result.error) return result.error.code === "22023"
+      ? { status: "invalid", message: "Choose a valid access mode and select at least one member." }
+      : mapInsertError(result.error.code)
+    return { status: "created", projectId: result.data }
+  }
+
   const projectId = randomUUID()
   const inserted = await supabase.client.from("projects").insert({
     id: projectId,
@@ -241,7 +253,7 @@ function selectableDepartments(
   managedIds: Set<string>
 ) {
   if (role === "org_admin") return departments
-  if (role === "viewer") return null
+  if (role === "viewer" || role === "admin") return null
   const managed = departments.filter((department) => managedIds.has(department.id))
   return managed.length > 0 ? managed : null
 }
@@ -254,7 +266,7 @@ async function canInsertProject(
   leadDepartmentId: string
 ) {
   if (role === "org_admin") return true
-  if (role === "viewer") return false
+  if (role === "viewer" || role === "admin") return false
   const managed = await supabase
     .from("department_memberships")
     .select("department_id")

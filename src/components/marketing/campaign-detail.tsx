@@ -254,7 +254,7 @@ function Overview({
 }
 
 function CampaignTasks({ campaignId, tasks }: { campaignId: string; tasks: Task[] }) {
-  const { actorId, createTask, updateTask, setTaskStatus } = useWorkspace()
+  const { canCreateRecords,  actorId, createTask, updateTask, setTaskStatus } = useWorkspace()
   const [open, setOpen] = useState(false)
   const [session, setSession] = useState(0)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -273,7 +273,7 @@ function CampaignTasks({ campaignId, tasks }: { campaignId: string; tasks: Task[
             setSession((current) => current + 1)
             setOpen(true)
           }}
-        >
+         disabled={!canCreateRecords}>
           Create Task
         </Button>
       </div>
@@ -364,7 +364,7 @@ function CampaignDeliverables({
   projectId: string
   items: Deliverable[]
 }) {
-  const { actorId, createDeliverable, setDeliverableStatus } = useWorkspace()
+  const { canCreateRecords,  actorId, createDeliverable, setDeliverableStatus } = useWorkspace()
   const [open, setOpen] = useState(false)
   const [session, setSession] = useState(0)
   const role = workspaceRole(actorId)
@@ -382,7 +382,7 @@ function CampaignDeliverables({
             setSession((current) => current + 1)
             setOpen(true)
           }}
-        >
+         disabled={!canCreateRecords}>
           Add deliverable
         </Button>
       </div>

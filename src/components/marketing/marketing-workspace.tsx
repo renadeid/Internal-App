@@ -55,7 +55,7 @@ function blankCampaign(ownerId: string): CampaignInput {
 }
 
 export function MarketingWorkspace() {
-  const { projects, campaigns, tasks, deliverables, activity, actorId, createCampaign } =
+  const { projects, campaigns, tasks, deliverables, activity, actorId, createCampaign, canCreateRecords } =
     useWorkspace()
   const [query, setQuery] = useState("")
   const [status, setStatus] = useState<StatusFilter>("All")
@@ -160,7 +160,7 @@ export function MarketingWorkspace() {
               setFormSession((current) => current + 1)
               setCreating(true)
             }}
-          >
+           disabled={!canCreateRecords}>
             Create Campaign
           </Button>
         </div>

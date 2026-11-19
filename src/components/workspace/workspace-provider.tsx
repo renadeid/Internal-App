@@ -9,6 +9,8 @@ import {
   useSyncExternalStore,
 } from "react"
 
+import { useOrganization } from "@/components/auth/organization-provider"
+import { guardPreviewMutation } from "@/lib/auth/preview-permissions"
 import { initialNotifications } from "@/lib/mock-data/activity"
 import { assetPath, kindForType } from "@/lib/mock-data/assets"
 import { campaignPath } from "@/lib/mock-data/campaigns"
@@ -53,6 +55,8 @@ type CreatedProject = {
 }
 
 type WorkspaceContextValue = {
+  canCreateRecords: boolean
+  canArchiveRecords: boolean
   projects: Project[]
   campaigns: Campaign[]
   tasks: Task[]
@@ -90,6 +94,9 @@ type WorkspaceContextValue = {
 const WorkspaceContext = createContext<WorkspaceContextValue | null>(null)
 
 export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
+  const { activeOrganization } = useOrganization()
+  const canCreateRecords = activeOrganization?.role !== "admin"
+  const canArchiveRecords = canCreateRecords
   const recordsRaw = useSyncExternalStore(
     subscribeRecords,
     getRecordsSnapshot,
@@ -502,6 +509,8 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
 
   const value = useMemo<WorkspaceContextValue>(
     () => ({
+      canCreateRecords,
+      canArchiveRecords,
       projects,
       campaigns: records.campaigns,
       tasks: records.tasks,
@@ -513,21 +522,21 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       actorId,
       setActorId,
       isMarketingManager: actorId === marketingManagerId,
-      createProject,
+      createProject: guardPreviewMutation(canCreateRecords, createProject),
       updateProject,
-      createCampaign,
+      createCampaign: guardPreviewMutation(canCreateRecords, createCampaign),
       updateCampaign,
-      createTask,
+      createTask: guardPreviewMutation(canCreateRecords, createTask),
       updateTask,
       setTaskStatus,
-      createDeliverable,
+      createDeliverable: guardPreviewMutation(canCreateRecords, createDeliverable),
       setDeliverableStatus,
-      createAsset,
+      createAsset: guardPreviewMutation(canCreateRecords, createAsset),
       updateAsset,
-      setAssetArchived,
-      addAssetComment,
+      setAssetArchived: guardPreviewMutation(canArchiveRecords, setAssetArchived),
+      addAssetComment: guardPreviewMutation(canCreateRecords, addAssetComment),
       setAssetCommentResolved,
-      addAssetVersion,
+      addAssetVersion: guardPreviewMutation(canCreateRecords, addAssetVersion),
       notifications,
       unreadCount: notifications.filter((item) => !item.read).length,
       markNotificationRead,
@@ -536,6 +545,8 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
       dismissLastCreated,
     }),
     [
+      canCreateRecords,
+      canArchiveRecords,
       projects,
       records,
       actorId,

@@ -74,7 +74,7 @@ function toPerson(
       name: "Unknown member",
       email: "No email on this profile",
       initials: "?",
-      avatarColor: "#2563EB",
+      avatarColor: "#3D5A80",
       role,
     }
   }

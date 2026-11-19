@@ -17,6 +17,7 @@ export type OrganizationTask = {
   dueOn: string | null
   archivedAt: string | null
   canWrite: boolean
+  canUpdateStatus?: boolean
 }
 
 export type OrganizationTasksResult =
@@ -110,7 +111,8 @@ export type TaskCreationAccess =
   | { status: "rejected" }
   | { status: "unavailable" }
   | { status: "ready"; canCreate: false }
-  | { status: "ready"; canCreate: true; assignees: TaskAssigneeOption[] }
+  | { status: "ready"; canCreate: true; canEdit: true; canArchive: boolean; assignees: TaskAssigneeOption[] }
+  | { status: "ready"; canCreate: false; canEdit: true; canArchive: false; assignees: TaskAssigneeOption[] }
 
 export function taskStatusLabel(status: TaskStatusValue) {
   if (status === "todo") return "To do"

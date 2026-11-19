@@ -4,6 +4,8 @@ import { useState } from "react"
 import Link from "next/link"
 
 import { AssetFormDialog } from "@/components/assets/asset-form-dialog"
+import { AssetDownloadButton } from "@/components/assets/asset-download-button"
+import { PublicShare } from "@/components/shared/public-share"
 import { AssetMark } from "@/components/assets/asset-mark"
 import { useWorkspace } from "@/components/workspace/workspace-provider"
 import { Badge } from "@/components/ui/badge"
@@ -69,6 +71,7 @@ export function AssetDetail({ assetId }: { assetId: string }) {
             </p>
             <p className="mt-3 text-xs text-muted-foreground">{visibilityNote}</p>
             <div className="mt-4 flex flex-wrap gap-2">
+              <AssetDownloadButton asset={asset} />
               <Button
                 type="button"
                 variant="outline"
@@ -80,13 +83,14 @@ export function AssetDetail({ assetId }: { assetId: string }) {
                 Edit asset
               </Button>
               {asset.archived ? (
-                <Button type="button" onClick={() => workspace.setAssetArchived(asset.id, false)}>
+                <Button type="button" disabled={!workspace.canArchiveRecords} onClick={() => workspace.setAssetArchived(asset.id, false)}>
                   Restore
                 </Button>
               ) : (
                 <Button
                   type="button"
                   variant="outline"
+                  disabled={!workspace.canArchiveRecords}
                   onClick={() => workspace.setAssetArchived(asset.id, true)}
                 >
                   Archive
@@ -107,6 +111,7 @@ export function AssetDetail({ assetId }: { assetId: string }) {
         </div>
       </section>
 
+      <PublicShare key={asset.id} resourceId={asset.id} kind="asset" asset={{ title: asset.name, description: asset.description, url: asset.url ?? "", type: asset.type }} />
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(16rem,0.8fr)]">
         <section className={`${surfaceClass} p-5`}>
           <h2 className="text-sm font-medium">Details</h2>
@@ -221,7 +226,7 @@ export function AssetDetail({ assetId }: { assetId: string }) {
             className="h-9"
             onChange={(event) => setVersionNotes(event.target.value)}
           />
-          <Button type="submit">Add version</Button>
+          <Button type="submit" disabled={!workspace.canCreateRecords}>Add version</Button>
         </form>
         {versionError ? <p className="mt-2 text-xs text-destructive">{versionError}</p> : null}
         <ol className="mt-4 space-y-4">
@@ -260,7 +265,7 @@ export function AssetDetail({ assetId }: { assetId: string }) {
             onChange={(event) => setComment(event.target.value)}
           />
           <div>
-            <Button type="submit">Add comment</Button>
+            <Button type="submit" disabled={!workspace.canCreateRecords}>Add comment</Button>
           </div>
         </form>
         {comments.length === 0 ? (

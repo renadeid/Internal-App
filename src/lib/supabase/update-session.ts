@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
 
+import { safeReturnPath } from "@/lib/auth/safe-return-path"
 import type { Database } from "@/lib/supabase/database"
 import { readSupabasePublicEnv } from "@/lib/supabase/public-env"
 
@@ -10,6 +11,8 @@ import { readSupabasePublicEnv } from "@/lib/supabase/public-env"
  * token with Supabase Auth.
  */
 export async function updateSession(request: NextRequest) {
+  // Only the token-scoped read-only endpoint is public; workspace routes remain protected.
+  if (/^\/share\/[^/]+\/?$/.test(request.nextUrl.pathname)) return NextResponse.next({ request })
   const { url, publishableKey } = readSupabasePublicEnv()
   let response = NextResponse.next({ request })
   const pendingCookies: {
@@ -44,14 +47,13 @@ export async function updateSession(request: NextRequest) {
     const redirectUrl = request.nextUrl.clone()
     redirectUrl.pathname = "/login"
     redirectUrl.search = ""
+    redirectUrl.searchParams.set("next", safeReturnPath(pathname + request.nextUrl.search))
     return applyCookies(NextResponse.redirect(redirectUrl), pendingCookies)
   }
 
   if (data.user && isLogin) {
-    const redirectUrl = request.nextUrl.clone()
-    redirectUrl.pathname = "/"
-    redirectUrl.search = ""
-    return applyCookies(NextResponse.redirect(redirectUrl), pendingCookies)
+    const target = safeReturnPath(request.nextUrl.searchParams.get("next"))
+    return applyCookies(NextResponse.redirect(new URL(target, request.url)), pendingCookies)
   }
 
   return response

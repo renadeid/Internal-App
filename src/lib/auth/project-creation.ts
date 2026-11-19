@@ -1,3 +1,5 @@
+import type { ProjectAccessMode, ProjectPermissions, ProjectHistoryAccess } from "@/lib/auth/super-admin-types"
+
 export type ProjectDepartmentOption = {
   id: string
   name: string
@@ -15,12 +17,17 @@ export type ProjectCreationAccess =
   | {
       status: "ready"
       canCreate: true
+      isSuperAdmin: boolean
       currentUserId: string
       departments: ProjectDepartmentOption[]
       owners: ProjectOwnerOption[]
     }
 
 export type CreateProjectInput = {
+  historyAccess?: ProjectHistoryAccess
+  accessMode?: ProjectAccessMode
+  memberIds?: string[]
+  permissions?: ProjectPermissions
   organizationId: string
   name: string
   description: string

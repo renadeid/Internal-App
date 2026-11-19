@@ -16,14 +16,14 @@ const shortcuts: {
     title: "Marketing workspace",
     description: "Campaigns and the work in flight for the active department.",
     icon: Megaphone,
-    iconClass: "bg-[#8B5CF6]/10 text-[#6D28D9]",
+    iconClass: "bg-purple-500/10 text-purple-600",
   },
   {
     href: "/assets",
     title: "Assets Library",
     description: "Logos, photography, and files shared with the company.",
     icon: Images,
-    iconClass: "bg-[#2563EB]/10 text-[#1D4ED8]",
+    iconClass: "bg-navy-500/10 text-navy-600",
   },
   {
     href: "/artifacts",
@@ -45,7 +45,7 @@ export function QuickAccess() {
             <Link
               key={shortcut.href}
               href={shortcut.href}
-              className="flex gap-4 rounded-xl border border-border bg-card p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-shadow hover:shadow-[0_8px_20px_rgba(15,23,42,0.06)] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+              className="flex gap-4 roaya-glass rounded-2xl border border-border bg-card p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-shadow hover:shadow-[0_8px_20px_rgba(15,23,42,0.06)] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
             >
               <span
                 className={cn(

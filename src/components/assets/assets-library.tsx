@@ -5,6 +5,7 @@ import Link from "next/link"
 import { Folder, Images, Layers, LayoutGrid, List } from "lucide-react"
 
 import { AssetFormDialog } from "@/components/assets/asset-form-dialog"
+import { AssetDownloadButton } from "@/components/assets/asset-download-button"
 import { AssetMark } from "@/components/assets/asset-mark"
 import { KpiCard } from "@/components/dashboard/kpi-card"
 import { PageIntro } from "@/components/shared/page-intro"
@@ -57,7 +58,7 @@ function blankAsset(ownerId: string): AssetInput {
 }
 
 export function AssetsLibrary() {
-  const { projects, campaigns, assets, actorId, createAsset } = useWorkspace()
+  const { projects, campaigns, assets, actorId, createAsset, canCreateRecords } = useWorkspace()
   const [query, setQuery] = useState("")
   const [type, setType] = useState<TypeFilter>("All")
   const [projectId, setProjectId] = useState("all")
@@ -123,7 +124,7 @@ export function AssetsLibrary() {
             setFormSession((current) => current + 1)
             setCreating(true)
           }}
-        >
+         disabled={!canCreateRecords}>
           Add asset
         </Button>
       </div>
@@ -364,7 +365,7 @@ function AssetCard({
 }) {
   const owner = getMember(asset.ownerId)
   return (
-    <article className={`${surfaceClass} flex flex-col p-4`}>
+    <article className={`${surfaceClass} roaya-interactive flex flex-col p-4`}>
       <Link
         href={assetPath(asset.id)}
         className="rounded-lg focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
@@ -389,6 +390,7 @@ function AssetCard({
       <p className="mt-1 text-xs text-muted-foreground">
         {owner.name} · {formatStamp(asset.updatedAt)}
       </p>
+      <div className="mt-4"><AssetDownloadButton asset={asset} /></div>
     </article>
   )
 }
@@ -409,6 +411,7 @@ function AssetRow({ asset, projectName }: { asset: Asset; projectName: string })
         </p>
       </div>
       <Badge variant="secondary">{visibilityLabel[asset.visibility]}</Badge>
+      <AssetDownloadButton asset={asset} />
     </li>
   )
 }
