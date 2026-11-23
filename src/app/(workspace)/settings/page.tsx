@@ -22,8 +22,8 @@ export default async function SettingsPage() {
         description="Manage your profile and organization access."
       />
       <SuperAdminPanel />
-      <div className="grid gap-4 lg:grid-cols-2">
-        <section className="rounded-xl border border-border bg-card p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+      <div className="roaya-glass grid divide-y divide-border lg:grid-cols-2 lg:divide-x lg:divide-y-0">
+        <section className="min-w-0 p-5 sm:p-7">
           <h2 className="text-sm font-semibold">Profile</h2>
           <div className="mt-4 flex items-center gap-3">
             <Avatar className="size-12">
@@ -52,7 +52,7 @@ export default async function SettingsPage() {
             </div>
           </dl>
         </section>
-        <section className="rounded-xl border border-border bg-card p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+        <section className="min-w-0 p-5 sm:p-7">
           <h2 className="text-sm font-semibold">Workspace</h2>
           <dl className="mt-4 grid gap-3 text-sm">
             <div>
