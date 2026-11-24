@@ -48,7 +48,7 @@
 @media(max-width:380px){.formContent{padding:22px}.formContent h1{font-size:34px}.formEyebrow{font-size:12px}}
 
 /* Option 2 · Colour field (dark A) — motion and finish matched to the animated-options artifact. */
-.film~.vignette{background:linear-gradient(90deg,#0b1220d9 0%,#0b122080 55%,#0b1220b3 100%)}
+.film~.vignette{background:linear-gradient(90deg,#0b1220b3 0%,#0b122052 55%,#0b12208c 100%)}
 .sceneHeader,.workspaceLabel,.eyebrow,.sceneCopy h2,.sceneCopy>p:last-child,.formContent,.sceneFooter,.formFooter{animation:rise .9s cubic-bezier(.16,1,.3,1) both}
 .sceneCopy{animation:none}
 .sceneHeader{animation-delay:.15s}
