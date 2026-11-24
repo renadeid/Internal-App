@@ -1,6 +1,6 @@
 "use client"
 
-import { Menu, Plus } from "lucide-react"
+import { Menu, PanelLeftClose, PanelLeftOpen, Plus } from "lucide-react"
 
 import { HeaderBreadcrumbs } from "@/components/layout/header-breadcrumbs"
 import { NotificationsMenu } from "@/components/layout/notifications-menu"
@@ -14,12 +14,16 @@ export function Header({
   canCreate,
   createLabel,
   onOpenMobileNav,
+  sidebarCollapsed,
+  onToggleSidebar,
   onCreate,
 }: {
   identity: UserIdentity
   canCreate: boolean
   createLabel: string
   onOpenMobileNav: () => void
+  sidebarCollapsed: boolean
+  onToggleSidebar: () => void
   onCreate: () => void
 }) {
   return (
@@ -35,6 +39,7 @@ export function Header({
         >
           <Menu />
         </Button>
+        <Button type="button" variant="outline" size="icon" className="hidden lg:inline-flex" aria-label={sidebarCollapsed?"Expand sidebar":"Collapse sidebar"} aria-expanded={!sidebarCollapsed} onClick={onToggleSidebar}>{sidebarCollapsed?<PanelLeftOpen/>:<PanelLeftClose/>}</Button>
         <HeaderBreadcrumbs />
         <div className="min-w-0 flex-1">
           <SearchField />

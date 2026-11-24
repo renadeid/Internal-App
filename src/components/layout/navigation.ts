@@ -64,6 +64,8 @@ export function isNavActive(pathname: string, href: AppRoute) {
 }
 
 export function breadcrumbLabel(pathname: string) {
+  if (pathname.startsWith("/assets/")) return "Asset details"
+  if (pathname.startsWith("/people/")) return "Employee profile"
   if (pathname in labels) return labels[pathname as AppRoute]
   return "Roaya Connect"
 }

@@ -355,6 +355,11 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      shared_asset_upload_access: { Args: {target_organization:string}; Returns:unknown }
+      list_shared_assets: { Args: {target_organization:string}; Returns:unknown }
+      edit_shared_asset: { Args: {target_asset:string;details:Record<string,unknown>}; Returns:undefined }
+      delete_shared_asset: { Args: {target_asset:string;confirmation_name:string}; Returns:unknown }
+      shared_asset_file: { Args: {target_asset:string;target_version?:string}; Returns:unknown }
       admin_invite_project_tasks: { Args: { target_organization: string; target_project: string; target_profile: string; target_history_access: string; selected_tasks: string[]; allow_status_update: boolean }; Returns: undefined }
       set_assigned_task_status: { Args: { target_organization: string; target_project: string; target_task: string; next_status: Database["public"]["Enums"]["task_status"] }; Returns: boolean }
       my_project_task_invitations: { Args: { target_organization: string }; Returns: { id: string; can_update_assigned_status: boolean; task_titles: string[] }[] }

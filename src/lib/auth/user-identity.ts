@@ -1,4 +1,5 @@
 export type UserIdentity = {
+  avatarUrl?: string
   name: string
   email: string
   initials: string

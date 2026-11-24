@@ -13,7 +13,7 @@ async function denied(sql,args=[],code='42501') { await assert.rejects(db.query(
 const ids = Object.fromEntries(['org','otherOrg','admin','member','second','viewer','outsider','department','otherDepartment'].map((k,i) => [k, `00000000-0000-4000-8000-${String(i+1).padStart(12,'0')}`]))
 async function actor(id) { await db.exec('reset role'); await db.query("select set_config('request.jwt.claim.sub',$1,false)",[id ?? '']); await db.exec('set role authenticated') }
 try {
- await db.exec(`create role anon; create role authenticated; create schema auth;
+ await db.exec(`create role anon; create role authenticated; create role service_role; create schema auth;
  create table auth.users(id uuid primary key,email text,raw_user_meta_data jsonb default '{}'::jsonb);
  create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
  grant usage on schema auth to authenticated,anon; grant execute on function auth.uid() to authenticated,anon;`)
@@ -303,5 +303,108 @@ try {
  await actor(ids.viewer)
  await db.query('select public.accept_project_invitation($1)',[staleInvite])
  await denied('select public.set_assigned_task_status($1,$2,$3,$4)',[ids.org,taskInviteProject,changedTask,'done'])
+
+ // Shared files are registered only through the server role after byte verification.
+ await actor(ids.admin)
+ const fileProject=await create('custom',{memberIds:[ids.member,ids.viewer],permissions:{manageAssets:true}})
+ const limitedEmployee=await scalar('select gen_random_uuid()')
+ const unrelatedEmployee=await scalar('select gen_random_uuid()')
+ await db.exec('reset role')
+ await db.query("insert into auth.users(id,email) values($1,'limited-file@test.invalid'),($2,'unrelated-file@test.invalid')",[limitedEmployee,unrelatedEmployee])
+ await db.query("insert into public.organization_memberships(organization_id,profile_id,role) values($1,$2,'member'),($3,$4,'member')",[ids.org,limitedEmployee,ids.otherOrg,unrelatedEmployee])
+ await db.query("insert into public.project_members(organization_id,project_id,profile_id,role,history_access) values($1,$2,$3,'project_member','assigned_only')",[ids.org,fileProject,limitedEmployee])
+ const sharedId=await scalar('select gen_random_uuid()'),sharedVersion=await scalar('select gen_random_uuid()')
+ const filePayload={organizationId:ids.org,assetId:sharedId,versionId:sharedVersion,projectId:fileProject,visibility:'project_members',contentHash:'a'.repeat(64),name:'Shared project file',description:'Private design',tags:['brand'],collection:'Brand',fileName:'logo.png',mime:'image/png',size:100,type:'image'}
+ await actor(ids.member)
+ await denied('select public.register_shared_asset($1,$2::jsonb)',[ids.member,JSON.stringify(filePayload)])
+ await db.exec('reset role; set role service_role')
+ check(await scalar('select public.register_shared_asset($1,$2::jsonb)',[ids.member,JSON.stringify(filePayload)]),sharedId,'server registers scoped file atomically')
+ check(await scalar('select public.register_shared_asset($1,$2::jsonb)',[ids.member,JSON.stringify(filePayload)]),sharedId,'file finalization is idempotent')
+ for(const duplicateName of ['Shared project file','SHARED PROJECT FILE','  shared   project file  ']){
+  await denied('select public.register_shared_asset($1,$2::jsonb)',[ids.member,JSON.stringify({...filePayload,assetId:await scalar('select gen_random_uuid()'),versionId:await scalar('select gen_random_uuid()'),name:duplicateName})],'23505')
+ }
+ await denied('select public.register_shared_asset($1,$2::jsonb)',[ids.member,JSON.stringify({...filePayload,assetId:await scalar('select gen_random_uuid()'),versionId:await scalar('select gen_random_uuid()'),name:'Renamed same bytes'})],'23505')
+ check(await scalar('select public.shared_asset_content_exists($1,$2)',[ids.org,'a'.repeat(64)]),true,'identical bytes detected regardless of name')
+ check(await scalar('select public.shared_asset_content_exists($1,$2)',[ids.otherOrg,'a'.repeat(64)]),false,'content checks stay within company')
+ check(await scalar('select public.shared_asset_name_exists($1,$2)',[ids.org,' SHARED   PROJECT FILE ']),true,'duplicate preflight normalizes case and whitespace')
+ check(await scalar('select public.shared_asset_name_exists($1,$2)',[ids.otherOrg,'Shared project file']),false,'names are scoped to company')
+ await denied('select public.register_shared_asset($1,$2::jsonb)',[ids.second,JSON.stringify({...filePayload,assetId:ids.second})])
+ await denied('select public.register_shared_asset($1,$2::jsonb)',[ids.viewer,JSON.stringify({...filePayload,assetId:ids.viewer})])
+ await denied('select public.register_shared_asset($1,$2::jsonb)',[unrelatedEmployee,JSON.stringify({...filePayload,assetId:unrelatedEmployee})])
+ await actor(ids.member)
+ check((await scalar('select public.shared_asset_file($1)',[sharedId])).path,ids.org+'/'+sharedId+'/v1/'+sharedVersion,'full-history member gets only scoped file descriptor')
+ check((await scalar('select public.list_shared_assets($1)',[ids.org])).some(a=>a.id===sharedId&&a.hasFile&&a.canEdit),true,'uploader sees shared file in library')
+ await denied("update public.assets set visibility='company' where id=$1",[sharedId])
+ await denied('delete from public.asset_project_links where asset_id=$1',[sharedId])
+ await actor(ids.admin)
+ await db.query("update public.project_members set history_access='assigned_only' where project_id=$1 and profile_id=$2",[fileProject,ids.member])
+ await actor(ids.member)
+ check(await scalar('select public.shared_asset_file($1)',[sharedId]),null,'downgraded uploader cannot bypass assigned-only file restrictions')
+ await actor(ids.admin)
+ await db.query("update public.project_members set history_access='full_history',can_manage_assets=true where project_id=$1 and profile_id=$2",[fileProject,ids.member])
+
+ await actor(limitedEmployee)
+ check(await scalar('select public.shared_asset_file($1)',[sharedId]),null,'assigned-only membership cannot download project files')
+ check((await scalar('select public.list_shared_assets($1)',[ids.org])).some(a=>a.id===sharedId),false,'assigned-only file metadata stays hidden')
+ await actor(unrelatedEmployee)
+ await denied('select public.list_shared_assets($1)',[ids.org])
+ check(await scalar('select public.shared_asset_file($1)',[sharedId]),null,'another company cannot read files')
+ await actor(ids.viewer)
+ check((await scalar('select public.shared_asset_file($1)',[sharedId])).assetId,sharedId,'full-history viewer can download')
+ await denied('select public.edit_shared_asset($1,$2::jsonb)',[sharedId,JSON.stringify({name:'No',description:'',tags:[],collection:'General'})])
+ await denied('select public.delete_shared_asset($1,$2)',[sharedId,'Shared project file'])
+ await actor(ids.second)
+ await db.query('select public.edit_shared_asset($1,$2::jsonb)',[sharedId,JSON.stringify({name:'Admin edited file',description:'Edited',tags:['reviewed'],collection:'Brand'})]);checks++
+ await denied('select public.delete_shared_asset($1,$2)',[sharedId,'Admin edited file'])
+ await denied('select public.edit_shared_asset($1,$2::jsonb)',[sharedId,JSON.stringify({name:'Admin edited file',description:'',tags:[],collection:'General',visibility:'company',projectId:''})])
+ await actor(ids.admin)
+ const fileToken='e'.repeat(64)
+ const sharedLink=await scalar('select public.create_viewer_link($1,$2,$3,$4,$5::jsonb)',[ids.org,sharedId,'asset',fileToken,JSON.stringify({title:'Forged',url:'https://evil.invalid'})])
+ await db.exec('reset role; set role anon')
+ const fileSnapshot=await scalar('select public.read_viewer_link($1)',[fileToken])
+ check(fileSnapshot.content.title,'Admin edited file','public asset snapshot uses database metadata, not caller fields')
+ check(fileSnapshot.content.versionId,sharedVersion,'public link snapshots a specific stored version')
+ check(fileSnapshot.content.url,'','public snapshot excludes forged external file URLs')
+ await denied('select public.shared_asset_file($1)',[sharedId])
+ await actor(ids.admin)
+
+ await db.query('select public.edit_shared_asset($1,$2::jsonb)',[sharedId,JSON.stringify({name:'Admin edited file',description:'',tags:[],collection:'General',visibility:'company',projectId:''})]);checks++
+ await actor(limitedEmployee)
+ check((await scalar('select public.shared_asset_file($1)',[sharedId])).assetId,sharedId,'company-wide file access is explicit and available to organization members')
+ await db.exec('reset role; set role anon')
+ check(await scalar('select public.read_viewer_link($1)',[fileToken]),null,'changing file access revokes previous public links')
+ await actor(ids.admin)
+ const deletionFileToken='f'.repeat(64)
+ await db.query('select public.create_viewer_link($1,$2,$3,$4)',[ids.org,sharedId,'asset',deletionFileToken]);checks++
+ await db.exec('reset role; set role anon')
+ check((await scalar('select public.read_viewer_link($1)',[deletionFileToken])).content.versionId,sharedVersion,'new public token works before deletion')
+ await actor(ids.admin)
+ await denied('select public.delete_shared_asset($1,$2)',[sharedId,'Wrong name'],'22023')
+ const removedFiles=await scalar('select public.delete_shared_asset($1,$2)',[sharedId,'Admin edited file'])
+ check(removedFiles,[{bucket:'shared-assets',path:ids.org+'/'+sharedId+'/v1/'+sharedVersion}],'deletion returns only actual stored file paths')
+ check(await scalar('select count(*)::int from public.asset_versions where asset_id=$1',[sharedId]),0,'file version metadata removed with asset')
+ check(await scalar('select count(*)::int from public.projects where id=$1',[fileProject]),1,'asset deletion keeps project')
+ await db.exec('reset role; set role anon')
+ check(await scalar('select public.read_viewer_link($1)',[deletionFileToken]),null,'asset deletion revokes anonymous file sharing')
+ await actor(ids.admin)
+ // Employee departure transfers existing work without granting ordinary recipients new access.
+ await db.exec('reset role');const departing=await scalar('select gen_random_uuid()');
+ await db.query("insert into auth.users(id,email) values($1,'departing@test.invalid')",[departing]);
+ await db.query("insert into public.organization_memberships(organization_id,profile_id,role) values($1,$2,'member')",[ids.org,departing]);
+ await actor(ids.admin);const departureProject=await create('organization');
+ await db.exec("reset role; select set_config('request.jwt.claim.sub','',false)");
+ await db.query('update public.projects set owner_id=$1 where id=$2',[departing,departureProject]);
+ const departureCampaign=await scalar("insert into public.campaigns(organization_id,project_id,slug,name,owner_id,type,starts_on,ends_on) values($1,$2,'departure','Departure campaign',$3,'other','2026-01-01','2026-02-01') returning id",[ids.org,departureProject,departing]);
+ const departureTask=await scalar("insert into public.tasks(organization_id,project_id,title,assignee_id) values($1,$2,'Departure task',$3) returning id",[ids.org,departureProject,departing]);
+ await db.exec('set role service_role');
+ await denied('select public.transfer_departing_employee_work($1,$2,$3,$4)',[ids.member,ids.org,departing,ids.admin]);
+ await denied('select public.transfer_departing_employee_work($1,$2,$3,$4)',[ids.admin,ids.org,departing,ids.viewer],'P0001');
+ await denied('select public.transfer_departing_employee_work($1,$2,$3,$4)',[ids.admin,ids.org,departing,unrelatedEmployee],'P0001');
+ const moved=await scalar('select public.transfer_departing_employee_work($1,$2,$3,$4)',[ids.admin,ids.org,departing,ids.admin]);
+ check(moved,{projects:1,campaigns:1,assets:0,tasks:1},'departure transfers all ownership and assignments');
+ await db.exec('reset role');
+ check(await scalar('select owner_id from public.projects where id=$1',[departureProject]),ids.admin,'project ownership retained by recipient');
+ check(await scalar('select owner_id from public.campaigns where id=$1',[departureCampaign]),ids.admin,'campaign ownership retained by recipient');
+ check(await scalar('select assignee_id from public.tasks where id=$1',[departureTask]),ids.admin,'task assigned to recipient');
  console.log(`Passed ${checks} PostgreSQL permission and workflow checks across all migrations.`)
 } catch (error) { console.error(JSON.stringify({message:error.message,code:error.code,query:error.query})); process.exitCode=1 } finally { await db.close() }

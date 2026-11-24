@@ -65,6 +65,8 @@ export function AppShell({
           canCreate={canCreate}
           createLabel={projectCreationLabel(creation)}
           onOpenMobileNav={() => setMobileOpen(true)}
+          sidebarCollapsed={collapsed}
+          onToggleSidebar={() => setCollapsed(value => !value)}
           onCreate={() => setCreateOpen(true)}
         />
         <main id="main-content" className="flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">

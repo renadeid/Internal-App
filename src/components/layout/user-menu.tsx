@@ -5,7 +5,7 @@ import { useTransition } from "react"
 
 import { signOut } from "@/lib/auth/sign-out"
 import type { UserIdentity } from "@/lib/auth/user-identity"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -34,6 +34,7 @@ export function UserMenu({ identity }: { identity: UserIdentity }) {
         }
       >
         <Avatar size="sm">
+          {identity.avatarUrl ? <AvatarImage src={identity.avatarUrl} alt={identity.name} /> : null}
           <AvatarFallback
             className="text-[10px] font-semibold text-white"
             style={{ backgroundColor: identity.avatarColor }}

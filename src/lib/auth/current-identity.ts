@@ -2,6 +2,7 @@ import "server-only"
 
 import { toUserIdentity, type CurrentIdentity } from "@/lib/auth/user-identity"
 import { createClient } from "@/lib/supabase/server"
+import { employeePhotoUrls } from "@/lib/employee-photos"
 
 export async function getCurrentIdentity(): Promise<CurrentIdentity | null> {
   const supabase = await createClient()
@@ -15,6 +16,9 @@ export async function getCurrentIdentity(): Promise<CurrentIdentity | null> {
     .eq("id", user.id)
     .maybeSingle()
 
+  const membership = await supabase.from("organization_memberships").select("organization_id").eq("profile_id", user.id).limit(1)
+  const organizationId = membership.data?.[0]?.organization_id
+  const photos = organizationId ? await employeePhotoUrls(organizationId, [user.id]) : new Map<string, string>()
   return {
     ...toUserIdentity({
       authEmail: user.email ?? null,
@@ -25,5 +29,6 @@ export async function getCurrentIdentity(): Promise<CurrentIdentity | null> {
       initials: profile?.initials ?? null,
     }),
     profileId: user.id,
+    avatarUrl: photos.get(user.id),
   }
 }

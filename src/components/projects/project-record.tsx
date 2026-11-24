@@ -3,6 +3,7 @@
 import { useMemo, useState, useSyncExternalStore } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { ProjectSharedAssets } from "@/components/assets/shared-assets-library"
 import { PublicShare } from "@/components/shared/public-share"
 
 import { ProjectAdminAccess } from "@/components/projects/project-admin-access"
@@ -166,8 +167,7 @@ function ProjectBody({
           {project.description || "No description yet."}
         </p>
         <p className="mt-3 max-w-2xl text-sm text-muted-foreground">
-          Assets on their own pages are preview samples and are not linked to
-          this project.
+          Project files shared with your account are listed below.
         </p>
         {editable?.canDelete ? <DeleteProjectDialog key={`${project.id}:${deleteOpen}`} open={deleteOpen} onOpenChange={setDeleteOpen} organizationId={organizationId} project={project} /> : null}
         {editable?.canArchive ? (
@@ -211,6 +211,7 @@ function ProjectBody({
       <ProjectAdminAccess organizationId={organizationId} projectId={project.id} />
       <PublicShare key={`${organizationId}:${project.id}`} resourceId={project.id} kind="project" />
       <ProjectTasksRecord organizationId={organizationId} projectId={project.id} />
+      {project.historyAccess !== "assigned_only" ? <ProjectSharedAssets organizationId={organizationId} projectId={project.id} /> : null}
       {project.historyAccess === "assigned_only" ? <p className="text-sm text-muted-foreground">Your access is limited to tasks assigned to you. Other project work and history are private.</p> : <ProjectCampaignsRecord organizationId={organizationId} projectId={project.id} />}
     </div>
   )

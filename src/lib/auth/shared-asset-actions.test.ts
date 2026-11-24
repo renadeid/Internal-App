@@ -1,0 +1,21 @@
+import {beforeEach,describe,expect,it,vi} from "vitest"
+import {prepareSharedAsset,completeSharedAsset,editSharedAsset,deleteSharedAsset} from "./shared-asset-actions"
+const state=vi.hoisted(()=>({canUpload:false,duplicate:false,duplicateFile:false,allowed:true,actor:"actor",ticketActor:"actor",storageCalls:0,rpcs:[] as string[]}))
+vi.mock("./current-organizations",()=>({getAccessibleOrganizations:async()=>({status:"ready",organizations:state.allowed?[{id:"org"}]:[]})}))
+vi.mock("@/lib/supabase/server",()=>({createClient:async()=>({auth:{getUser:async()=>({data:{user:{id:state.actor}},error:null})},rpc:async(name:string)=>{state.rpcs.push(name);return {error:null,data:name==="shared_asset_upload_access"?{role:"member",canUpload:state.canUpload,projects:[]}:[{id:"asset",canEdit:false,canDelete:false}]}}})}))
+vi.mock("@/lib/shared-asset-storage",()=>({sharedAssetBucket:"shared-assets",sharedAssetAdmin:()=>{state.storageCalls++;return {rpc:async(name:string)=>({data:name==="shared_asset_content_exists"?state.duplicateFile:state.duplicate,error:null})}},sharedStoragePath:()=>"path",signAssetUpload:()=>"ticket",readAssetUpload:()=>({organizationId:"org",actorId:state.ticketActor,draft:{projectId:""}}),validateSharedFile:vi.fn()}))
+const draft={name:"Logo",description:"",tags:[],collection:"Brand",visibility:"company" as const,projectId:""}
+beforeEach(()=>{state.canUpload=false;state.duplicate=false;state.duplicateFile=false;state.allowed=true;state.actor="actor";state.ticketActor="actor";state.storageCalls=0;state.rpcs=[]})
+describe("shared-file server boundaries",()=>{
+ it("rejects duplicate names before issuing upload tokens",async()=>{state.canUpload=true;state.duplicate=true;expect(await prepareSharedAsset("org",draft,{name:"logo.png",size:100})).toEqual({ok:false,message:"An asset with this name is already uploaded. Choose a different name."})})
+ it("explains matching content when the name is new",async()=>{state.canUpload=true;state.duplicateFile=true;expect(await prepareSharedAsset("org",draft,{name:"renamed.png",size:100,sha256:"a".repeat(64)})).toEqual({ok:false,message:"This file is already uploaded, even if its name is different."})})
+ it("explains both causes when name and file are duplicated",async()=>{state.canUpload=true;state.duplicate=true;state.duplicateFile=true;expect(await prepareSharedAsset("org",draft,{name:"logo.png",size:100,sha256:"a".repeat(64)})).toEqual({ok:false,message:"This file is already uploaded, and the asset name is also already in use. Choose a different file and a different name."})})
+ it("explains the size limit separately",async()=>{state.canUpload=true;expect(await prepareSharedAsset("org",draft,{name:"logo.png",size:21*1024*1024})).toEqual({ok:false,message:"This file exceeds the 20 MB limit. Choose a smaller file."})})
+ it("explains empty files separately",async()=>{state.canUpload=true;expect(await prepareSharedAsset("org",draft,{name:"logo.png",size:0})).toEqual({ok:false,message:"This file is empty. Choose a file with content."})})
+ it("does not issue a storage capability without upload permission",async()=>{expect((await prepareSharedAsset("org",draft,{name:"logo.png",size:100})).ok).toBe(false);expect(state.storageCalls).toBe(0)})
+ it("rejects another organization before storage access",async()=>{state.allowed=false;expect((await prepareSharedAsset("other",draft,{name:"logo.png",size:100})).ok).toBe(false);expect(state.storageCalls).toBe(0)})
+ it("binds finalization to the original authenticated actor",async()=>{state.ticketActor="another-user";expect((await completeSharedAsset("ticket")).ok).toBe(false);expect(state.storageCalls).toBe(0)})
+ it("rechecks revoked permissions after upload",async()=>{expect((await completeSharedAsset("ticket")).ok).toBe(false);expect(state.storageCalls).toBe(0)})
+ it("does not call edit RPC for inaccessible assets",async()=>{expect((await editSharedAsset("org","asset",{name:"Logo",description:"",tags:[],collection:"Brand"})).ok).toBe(false);expect(state.rpcs).not.toContain("edit_shared_asset")})
+ it("does not call delete RPC or Storage for non-admins",async()=>{expect((await deleteSharedAsset("org","asset","Logo")).ok).toBe(false);expect(state.rpcs).not.toContain("delete_shared_asset");expect(state.storageCalls).toBe(0)})
+})

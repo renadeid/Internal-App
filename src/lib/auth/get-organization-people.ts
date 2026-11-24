@@ -8,6 +8,7 @@ import type {
 } from "@/lib/auth/organization-people"
 import { toUserIdentity } from "@/lib/auth/user-identity"
 import { createClient } from "@/lib/supabase/server"
+import { employeePhotoUrls } from "@/lib/employee-photos"
 
 export async function getOrganizationPeople(
   organizationId: string
@@ -55,7 +56,8 @@ export async function getOrganizationPeople(
       left.name.localeCompare(right.name) || left.email.localeCompare(right.email)
   )
 
-  return { status: "ready", currentUserId: user.id, people }
+  const photos = await employeePhotoUrls(organizationId, people.map(person => person.profileId))
+  return { status: "ready", currentUserId: user.id, people: people.map(person => ({ ...person, avatarUrl: photos.get(person.profileId) })) }
 }
 
 function toPerson(

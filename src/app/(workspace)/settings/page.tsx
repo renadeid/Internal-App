@@ -1,17 +1,20 @@
 import { SuperAdminPanel } from "@/components/settings/super-admin-panel"
 import type { Metadata } from "next"
 import { redirect } from "next/navigation"
+import { connection } from "next/server"
 
 import { OrganizationCompanyName } from "@/components/auth/organization-provider"
 import { getCurrentIdentity } from "@/lib/auth/current-identity"
 import { PageIntro } from "@/components/shared/page-intro"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 export const metadata: Metadata = {
   title: "Settings",
 }
 
 export default async function SettingsPage() {
+  // Session validation reads the current time; run it only for an incoming request.
+  await connection()
   const identity = await getCurrentIdentity()
   if (!identity) redirect("/login")
 
@@ -27,6 +30,7 @@ export default async function SettingsPage() {
           <h2 className="text-sm font-semibold">Profile</h2>
           <div className="mt-4 flex items-center gap-3">
             <Avatar className="size-12">
+              {identity.avatarUrl ? <AvatarImage src={identity.avatarUrl} alt={identity.name} /> : null}
               <AvatarFallback
                 className="font-semibold text-white"
                 style={{ backgroundColor: identity.avatarColor }}

@@ -8,6 +8,7 @@ export type OrganizationPerson = {
   email: string
   initials: string
   avatarColor: string
+  avatarUrl?: string
   role: OrganizationRole
 }
 

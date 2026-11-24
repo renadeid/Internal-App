@@ -1,10 +1,13 @@
 "use client"
 
-import { useMemo, useSyncExternalStore } from "react"
+import { useMemo, useState, useSyncExternalStore } from "react"
+
+import Link from "next/link"
+import { Input } from "@/components/ui/input"
 
 import { useOrganization } from "@/components/auth/organization-provider"
 import { PageIntro } from "@/components/shared/page-intro"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { getOrganizationPeople } from "@/lib/auth/get-organization-people"
 import type {
@@ -51,6 +54,7 @@ function PeopleList({
   organizationName: string
 }) {
   const snapshot = useOrganizationPeople(organizationId)
+ const [search, setSearch] = useState("")
 
   if (snapshot.status === "loading") {
     return <PeopleMessage message={`Loading people in ${organizationName}…`} />
@@ -66,14 +70,16 @@ function PeopleList({
   }
 
   return (
-    <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-      {snapshot.people.map((person) => (
+    <div className="grid gap-5"><div className="flex flex-wrap items-center justify-between gap-3"><p className="text-sm text-muted-foreground">{snapshot.people.length} employees · Select a person to open their profile.</p><Input type="search" className="h-11 w-full sm:w-80" aria-label="Search employees" placeholder="Search name or email…" value={search} onChange={e=>setSearch(e.target.value)} /></div><ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      {snapshot.people.filter(person => (person.name + " " + person.email).toLowerCase().includes(search.trim().toLowerCase())).map((person) => (
         <li
           key={person.profileId}
-          className="roaya-glass rounded-2xl border border-border bg-card p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)]"
+          className="roaya-glass rounded-2xl border border-border bg-card shadow-[0_1px_2px_rgba(15,23,42,0.04)]"
         >
+          <Link href={"/people/" + person.profileId} className="block h-full rounded-2xl p-5 transition-colors hover:bg-muted/50 focus-visible:outline-2 focus-visible:outline-ring">
           <div className="flex items-center gap-3">
             <Avatar>
+              {person.avatarUrl ? <AvatarImage src={person.avatarUrl} alt={person.name} /> : null}
               <AvatarFallback
                 className="text-xs font-semibold text-white"
                 style={{ backgroundColor: person.avatarColor }}
@@ -93,10 +99,10 @@ function PeopleList({
               </p>
             </div>
           </div>
-          <p className="mt-4 text-xs text-muted-foreground">{person.email}</p>
+          <p className="mt-4 break-all text-xs text-muted-foreground">{person.email}</p><p className="mt-4 text-xs font-medium text-primary">View employee profile</p></Link>
         </li>
       ))}
-    </ul>
+    </ul>{!snapshot.people.some(person => (person.name + " " + person.email).toLowerCase().includes(search.trim().toLowerCase())) ? <p className="py-6 text-sm text-muted-foreground">No employees match your search.</p> : null}</div>
   )
 }
 

@@ -3,6 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 
+import { SharedAssetDetail } from "@/components/assets/shared-assets-library"
 import { AssetFormDialog } from "@/components/assets/asset-form-dialog"
 import { AssetDownloadButton } from "@/components/assets/asset-download-button"
 import { PublicShare } from "@/components/shared/public-share"
@@ -20,7 +21,7 @@ import { getMember } from "@/lib/mock-data/team"
 import { deliverableStatusClass, surfaceClass } from "@/lib/presentation"
 import type { Asset, AssetInput } from "@/lib/types"
 
-export function AssetDetail({ assetId }: { assetId: string }) {
+function LegacyAssetDetail({ assetId }: { assetId: string }) {
   const workspace = useWorkspace()
   const asset = workspace.assets.find((item) => item.id === assetId)
   const [editing, setEditing] = useState(false)
@@ -340,3 +341,5 @@ function toAssetInput(asset: Asset): AssetInput {
     collection: asset.collection,
   }
 }
+
+export function AssetDetail({assetId}:{assetId:string}){return /^[0-9a-f-]{36}$/i.test(assetId)?<SharedAssetDetail assetId={assetId}/>:<LegacyAssetDetail assetId={assetId}/>}
