@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Eye, EyeOff } from "lucide-react"
+import { ArrowRight, Eye, EyeOff } from "lucide-react"
 import { useRouter, useSearchParams } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
@@ -87,7 +87,7 @@ export function LoginForm() {
         </p>
       ) : null}
       <Button type="submit" className="h-11 w-full" disabled={pending}>
-        {pending ? "Signing in…" : "Sign in"}
+        {pending ? "Signing in…" : <>Sign in <ArrowRight className="size-[18px]" aria-hidden /></>}
       </Button>
     </form>
   )
