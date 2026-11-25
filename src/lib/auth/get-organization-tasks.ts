@@ -40,6 +40,18 @@ export async function getOrganizationTasks(
   })
 }
 
+export async function getOrganizationTask(organizationId: string, taskId: string): Promise<OrganizationTasksResult> {
+  if (!isUuid(taskId)) return { status: "unavailable" }
+  const context = await openOrganization(organizationId)
+  if (context.status !== "ready") return context
+  const rows = await context.supabase.from("tasks").select(taskColumns)
+    .eq("organization_id", organizationId).eq("id", taskId)
+  if (rows.error) return { status: "error" }
+  if (!rows.data.length) return { status: "unavailable" }
+  const tasks = await withRelatedLabels(context.supabase, organizationId, context.userId, rows.data)
+  return tasks ? { status: "ready", tasks } : { status: "error" }
+}
+
 async function openOrganization(organizationId: string) {
   const access = await getAccessibleOrganizations()
   if (access.status !== "ready") return { status: "error" as const }

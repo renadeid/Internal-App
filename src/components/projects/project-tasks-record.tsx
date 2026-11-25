@@ -1,4 +1,5 @@
 "use client"
+import Link from "next/link"
 import {TaskWork} from "@/components/tasks/task-work-dialog"
 import { AssignedTaskStatus } from "@/components/tasks/assigned-task-status"
 
@@ -231,7 +232,7 @@ export function TaskRecord({
   return (
     <li className="border-b border-border py-3.5 last:border-b-0">
       <div className="flex items-start justify-between gap-3">
-        <p className="font-medium text-foreground">{task.title}</p>
+        <Link href={"/tasks/"+task.id} className="font-medium text-foreground hover:text-primary hover:underline underline-offset-4">{task.title}</Link>
         <div className="flex shrink-0 items-center gap-2">
           {onEdit ? (
             <Button type="button" size="sm" variant="outline" onClick={onEdit}>
