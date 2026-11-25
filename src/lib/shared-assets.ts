@@ -4,6 +4,7 @@ export type SharedAsset = {
  ownerId:string;ownerName:string|null;createdAt:string;updatedAt:string;externalUrl:string|null;
  canEdit:boolean;canDelete:boolean;hasFile:boolean;versionId:string|null;fileName:string|null;mime:string|null;size:number|null;
  projects:{id:string;name:string}[]
+ departmentIds?:string[]
 }
 export type SharedAssetDraft={name:string;description:string;tags:string[];collection:string;visibility:"company"|"project_members";projectId:string;folderId?:string}
 export type SharedAssetAccess={role:string;canUpload:boolean;projects:{id:string;name:string}[]}

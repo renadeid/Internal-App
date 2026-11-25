@@ -10,8 +10,24 @@ async function context(organizationId:string){
  const client=await createClient();const {data,error}=await client.auth.getUser();if(error||!data.user)throw Error("Sign in to continue.")
  return {client,actorId:data.user.id}
 }
-export async function getSharedAssets(organizationId:string):Promise<{ok:true;assets:SharedAsset[];access:SharedAssetAccess;folders:AssetFolder[]}|{ok:false;message:string}>{
- try{const {client}=await context(organizationId);const [rows,access]=await Promise.all([client.rpc("list_shared_assets",{target_organization:organizationId}),client.rpc("shared_asset_upload_access",{target_organization:organizationId})]);if(rows.error||access.error||!Array.isArray(rows.data)||!access.data)throw Error("Shared files are not available. The shared-files database update may still need to be applied.");const folders=await client.from("asset_folders").select("id,name,visibility,project_id").eq("organization_id",organizationId).order("name");if(folders.error)throw Error("Folders are not available. Apply the asset-folders database update.");return {ok:true,assets:rows.data as SharedAsset[],access:access.data as SharedAssetAccess,folders:folders.data}}
+export async function getSharedAssets(organizationId:string):Promise<{ok:true;assets:SharedAsset[];access:SharedAssetAccess;folders:AssetFolder[];departments:{id:string;name:string}[]}|{ok:false;message:string}>{
+ try{
+  const {client}=await context(organizationId)
+  const [rows,access,folders,departments,memberships]=await Promise.all([
+   client.rpc("list_shared_assets",{target_organization:organizationId}),
+   client.rpc("shared_asset_upload_access",{target_organization:organizationId}),
+   client.from("asset_folders").select("id,name,visibility,project_id").eq("organization_id",organizationId).order("name"),
+   client.from("departments").select("id,name").eq("organization_id",organizationId).order("name"),
+   client.from("department_memberships").select("profile_id,department_id").eq("organization_id",organizationId),
+  ])
+  if(rows.error||access.error||!Array.isArray(rows.data)||!access.data)throw Error("Shared files are not available. The shared-files database update may still need to be applied.")
+  if(folders.error)throw Error("Folders are not available. Apply the asset-folders database update.")
+  if(departments.error||memberships.error)throw Error("Asset departments could not be loaded.")
+  const ownerDepartments=new Map<string,string[]>()
+  for(const membership of memberships.data){const ids=ownerDepartments.get(membership.profile_id)??[];ids.push(membership.department_id);ownerDepartments.set(membership.profile_id,ids)}
+  const assets=(rows.data as SharedAsset[]).map(asset=>({...asset,departmentIds:ownerDepartments.get(asset.ownerId)??[]}))
+  return {ok:true,assets,access:access.data as SharedAssetAccess,folders:folders.data,departments:departments.data}
+ }
  catch(error){return {ok:false,message:error instanceof Error?error.message:"Files could not be loaded."}}
 }
 export async function prepareSharedAsset(organizationId:string,draftInput:SharedAssetDraft,file:{name:string;size:number;sha256?:string}){
