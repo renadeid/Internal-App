@@ -3,15 +3,18 @@ import { createClient } from "@/lib/supabase/server"
 
 /**
  * Ask Connect: answers questions about using Roaya Connect.
- * Server-only. Needs ANTHROPIC_API_KEY in the environment (Vercel → Settings → Environment Variables).
- * Optional: ANTHROPIC_MODEL to pick a different Claude model.
+ * Server-only. Set ONE of these in Vercel → Settings → Environment Variables:
+ *   GEMINI_API_KEY     Google Gemini (free key from aistudio.google.com). Optional GEMINI_MODEL.
+ *   ANTHROPIC_API_KEY  Anthropic Claude (console.anthropic.com). Optional ANTHROPIC_MODEL.
+ * If both are set, Gemini is used.
  */
 
 type ChatMessage = { role: "user" | "assistant"; content: string }
 
 const MAX_MESSAGES = 20
 const MAX_CHARS = 4000
-const DEFAULT_MODEL = "claude-sonnet-5-5"
+const DEFAULT_CLAUDE_MODEL = "claude-sonnet-5-5"
+const DEFAULT_GEMINI_MODEL = "gemini-flash-latest"
 
 const APP_GUIDE = `Roaya Connect is Roaya's internal workspace. Its sections, all in the left sidebar:
 - Dashboard (/): summary cards, quick access, your open tasks, recent activity and projects.
@@ -85,42 +88,72 @@ export async function POST(request: Request) {
   const messages = parseMessages(body)
   if (!messages) return Response.json({ error: "bad_request" }, { status: 400 })
 
-  const apiKey = process.env.ANTHROPIC_API_KEY
-  if (!apiKey) return Response.json({ error: "not_configured" }, { status: 503 })
+  const geminiKey = process.env.GEMINI_API_KEY
+  const claudeKey = process.env.ANTHROPIC_API_KEY
+  if (!geminiKey && !claudeKey) return Response.json({ error: "not_configured" }, { status: 503 })
 
   const name =
     typeof user.user_metadata?.full_name === "string" ? user.user_metadata.full_name.split(" ")[0] : ""
 
   try {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: process.env.ANTHROPIC_MODEL || DEFAULT_MODEL,
-        max_tokens: 600,
-        system: systemPrompt(name),
-        messages,
-      }),
-      signal: AbortSignal.timeout(30_000),
-    })
-    if (!res.ok) {
-      console.error("Ask Connect: model request failed", res.status)
-      return Response.json({ error: "upstream" }, { status: 502 })
-    }
-    const data = (await res.json()) as { content?: { type: string; text?: string }[] }
-    const reply = (data.content ?? [])
-      .filter((b) => b.type === "text" && b.text)
-      .map((b) => b.text)
-      .join("\n")
-      .trim()
+    const reply = geminiKey
+      ? await askGemini(geminiKey, systemPrompt(name), messages)
+      : await askClaude(claudeKey as string, systemPrompt(name), messages)
     if (!reply) return Response.json({ error: "upstream" }, { status: 502 })
     return Response.json({ reply })
   } catch (error) {
     console.error("Ask Connect: model request error", error)
     return Response.json({ error: "upstream" }, { status: 502 })
   }
+}
+
+async function askGemini(apiKey: string, system: string, messages: ChatMessage[]) {
+  const model = process.env.GEMINI_MODEL || DEFAULT_GEMINI_MODEL
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
+    {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-goog-api-key": apiKey },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: system }] },
+        contents: messages.map((m) => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] })),
+        generationConfig: { maxOutputTokens: 1024, temperature: 0.3 },
+      }),
+      signal: AbortSignal.timeout(30_000),
+    }
+  )
+  if (!res.ok) {
+    console.error("Ask Connect: Gemini request failed", res.status, (await res.text()).slice(0, 300))
+    return ""
+  }
+  const data = (await res.json()) as { candidates?: { content?: { parts?: { text?: string; thought?: boolean }[] } }[] }
+  return (data.candidates?.[0]?.content?.parts ?? [])
+    .filter((p) => p.text && !p.thought)
+    .map((p) => p.text)
+    .join("")
+    .trim()
+}
+
+async function askClaude(apiKey: string, system: string, messages: ChatMessage[]) {
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
+    body: JSON.stringify({
+      model: process.env.ANTHROPIC_MODEL || DEFAULT_CLAUDE_MODEL,
+      max_tokens: 600,
+      system,
+      messages,
+    }),
+    signal: AbortSignal.timeout(30_000),
+  })
+  if (!res.ok) {
+    console.error("Ask Connect: Claude request failed", res.status)
+    return ""
+  }
+  const data = (await res.json()) as { content?: { type: string; text?: string }[] }
+  return (data.content ?? [])
+    .filter((b) => b.type === "text" && b.text)
+    .map((b) => b.text)
+    .join("\n")
+    .trim()
 }
