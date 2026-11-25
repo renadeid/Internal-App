@@ -5,7 +5,7 @@ import { getOrganizationTasks } from "./get-organization-tasks"
 
 const state = vi.hoisted(() => ({ role: "member", signedIn: true, allowed: true, targetBelongs: true, tables: [] as string[] }))
 vi.mock("./current-organizations", () => ({ getAccessibleOrganizations: async () => ({ status: "ready", organizations: state.allowed ? [{ id: "org" }] : [] }) }))
-vi.mock("./get-organization-people", () => ({ getOrganizationPeople: async () => ({ status: "ready", people: [{ profileId: "employee" }] }) }))
+vi.mock("./get-organization-people", () => ({ getOrganizationPeople: async () => ({ status: "ready", people: [{ profileId: "employee" }, { profileId: "actor" }] }) }))
 vi.mock("./get-organization-projects", () => ({ getOrganizationProjects: vi.fn(async () => ({ status: "ready", projects: [{ id: "project", ownerId: "employee", archivedAt: null }] })) }))
 vi.mock("./get-organization-tasks", () => ({ getOrganizationTasks: vi.fn(async () => ({ status: "ready", tasks: [{ id: "task", projectId: "project", assigneeId: "employee", status: "todo" }] })) }))
 vi.mock("@/lib/employee-photos", () => ({}))
@@ -52,6 +52,25 @@ it.each(["org_admin", "team_lead"])("returns permitted employee work for %s", as
 it.each(["signedIn", "allowed", "targetBelongs"] as const)("rejects when %s is false before querying work", async key => {
   state[key] = false
   expect(await getEmployeeProfile("org", "employee")).toEqual({ status: "missing" })
+  expect(getOrganizationProjects).not.toHaveBeenCalled()
+  expect(getOrganizationTasks).not.toHaveBeenCalled()
+})
+
+it.each(["member", "viewer", "admin"])("allows %s to view their own work without granting access to another employee", async role => {
+  state.role = role
+  vi.mocked(getOrganizationProjects).mockResolvedValueOnce({ status: "ready", projects: [{ id: "own-project", ownerId: "actor", archivedAt: null }, { id: "other-project", ownerId: "employee", archivedAt: null }] } as Awaited<ReturnType<typeof getOrganizationProjects>>)
+  vi.mocked(getOrganizationTasks).mockResolvedValueOnce({ status: "ready", tasks: [{ id: "own-task", projectId: "own-project", assigneeId: "actor" }, { id: "other-task", projectId: "other-project", assigneeId: "employee" }] } as Awaited<ReturnType<typeof getOrganizationTasks>>)
+  const own = await getEmployeeProfile("org", "actor")
+  expect(own.status).toBe("ready")
+  if (own.status !== "ready") throw new Error("Expected own profile")
+  expect(own.profile).toMatchObject({ canViewWork: true, isSelf: true, canManage: false })
+  expect(own.profile.projects.map(project => project.id)).toEqual(["own-project"])
+  expect(own.profile.tasks.map(task => task.id)).toEqual(["own-task"])
+  vi.clearAllMocks()
+  const other = await getEmployeeProfile("org", "employee")
+  expect(other.status).toBe("ready")
+  if (other.status !== "ready") throw new Error("Expected employee overview")
+  expect(other.profile).toMatchObject({ canViewWork: false, isSelf: false, projects: [], tasks: [] })
   expect(getOrganizationProjects).not.toHaveBeenCalled()
   expect(getOrganizationTasks).not.toHaveBeenCalled()
 })
