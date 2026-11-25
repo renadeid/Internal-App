@@ -1,0 +1,7 @@
+# Artifact documents
+
+Artifact Hub imports `.md`, `.markdown`, and `.txt` files up to 512 KB. Documents are stored persistently in the current organization's `artifact_documents` table; their contents are plain text. All workspace members can read them. Members, Team leads and Super admins can import. Admins and Viewers are read-only. RLS enforces tenant isolation and upload roles. Author and creation time are stamped by the database. Duplicate filenames are rejected per workspace. Editing and deletion are not exposed.
+
+Each document has a signed-in `/artifacts/[id]` page with formatted Document and literal Source views, original-file download, and a copyable workspace-only link. Markdown uses react-markdown and remark-gfm with raw HTML disabled and default safe URL handling. Remote images are explicit links rather than automatically loaded images. TXT is rendered as literal text. Existing workspace references use Markdown and remain available in a separate collection. HTML export was removed.
+
+Apply `20261125170000_artifact_documents.sql` before application deployment. Applied to company-hub-test on 25 November 2026. Live transactional SQL verified Member upload, author stamping, teammate/Admin read, denied HTML uploads, no deletion privileges, denied Admin upload, and outsider read/write isolation. Test changes were rolled back. Eleven application tests verify format/size rules and Markdown rendering/security.

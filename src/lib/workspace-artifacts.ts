@@ -60,7 +60,6 @@ export const workspaceArtifacts: WorkspaceArtifact[] = [
   },
 ]
 
-export function artifactHtml(artifact: WorkspaceArtifact) {
-  const escape = (value: string) => value.replace(/[&<>"']/g, char => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" })[char]!)
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escape(artifact.title)} · Roaya Connect</title><style>body{font:16px system-ui,sans-serif;color:#1e293b;background:#f0f4f8;margin:0;padding:32px}main{max-width:800px;margin:auto;background:#fff;border-radius:16px;padding:40px;border-top:6px solid #3d5a80}small{color:#5a3f82}h1{font-size:32px;letter-spacing:-.02em}h2{font-size:20px;margin-top:32px;color:#334d6e}p,li{line-height:1.8}li{margin-bottom:12px}footer{margin-top:40px;border-top:1px solid #e2e8f0;padding-top:16px;font-size:13px;color:#64748b}@media print{body{background:white;padding:0}main{border:0;padding:0}li{break-inside:avoid}}</style></head><body><main><small>Roaya Connect · ${escape(artifact.category)} · ${escape(artifact.kind)}</small><h1>${escape(artifact.title)}</h1><p>${escape(artifact.summary)}</p>${artifact.sections.map(section=>`<section><h2>${escape(section.title)}</h2><ul>${section.items.map(item=>`<li>${escape(item)}</li>`).join("")}</ul></section>`).join("")}<footer>Workspace reference document. Check current permissions and project settings before acting.</footer></main></body></html>`
+export function artifactMarkdown(artifact: WorkspaceArtifact) {
+  return [`# ${artifact.title}`, artifact.summary, ...artifact.sections.map(section => `## ${section.title}\n\n${section.items.map(item => artifact.kind === "Checklist" ? `- [ ] ${item}` : `- ${item}`).join("\n")}`)].join("\n\n") + "\n"
 }

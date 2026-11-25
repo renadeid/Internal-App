@@ -5,6 +5,18 @@
 export type Database = {
   public: {
     Tables: {
+      artifact_documents: {
+        Row: { id: string; organization_id: string; title: string; file_name: string; content: string; created_by: string | null; created_at: string }
+        Insert: { organization_id: string; title: string; file_name: string; content: string }
+        Update: never
+        Relationships: []
+      }
+      knowledge_articles: {
+        Row: { id: string; organization_id: string; title: string; summary: string; body: string; category: string; department_id: string | null; status: string; source_url: string | null; created_by: string | null; updated_by: string | null; created_at: string; updated_at: string }
+        Insert: { id?: string; organization_id: string; title: string; summary?: string; body: string; category: string; department_id?: string | null; status?: string; source_url?: string | null }
+        Update: { title?: string; summary?: string; body?: string; category?: string; department_id?: string | null; status?: string; source_url?: string | null }
+        Relationships: []
+      }
       project_creation_grants: {
         Row: { organization_id: string; profile_id: string; granted_by: string | null; created_at: string }
         Insert: { organization_id: string; profile_id: string; granted_by?: string | null; created_at?: string }

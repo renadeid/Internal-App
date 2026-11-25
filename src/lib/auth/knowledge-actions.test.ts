@@ -1,0 +1,14 @@
+import { beforeEach, expect, it, vi } from "vitest"
+import { saveKnowledgeArticle } from "./knowledge-actions"
+const state=vi.hoisted(()=>({role:"member",allowed:true,signedIn:true,writes:[] as unknown[],filters:[] as [string,unknown][],conflict:false}))
+vi.mock("./current-organizations",()=>({getAccessibleOrganizations:async()=>({status:"ready",organizations:state.allowed?[{id:"org"}]:[]})}))
+vi.mock("@/lib/supabase/server",()=>({createClient:async()=>({auth:{getUser:async()=>({data:{user:state.signedIn?{id:"actor"}:null},error:null})},from:(table:string)=>{const q={select:()=>q,eq:(key:string,value:unknown)=>{state.filters.push([key,value]);return q},maybeSingle:async()=>({data:{role:state.role},error:null}),insert:(value:unknown)=>{state.writes.push(value);return q},update:(value:unknown)=>{state.writes.push(value);return q},then:(resolve:(value:unknown)=>unknown)=>Promise.resolve({data:table==="knowledge_articles"?(state.conflict?[]:[{id:"article"}]):[],error:null}).then(resolve)};return q}})}))
+const input={title:"Company guide",summary:"Summary",body:"Content",category:"Getting started" as const,departmentId:"",sourceUrl:"",status:"draft" as const}
+beforeEach(()=>{Object.assign(state,{role:"member",allowed:true,signedIn:true,writes:[],filters:[],conflict:false})})
+it.each(["member","viewer","admin"])("denies article writes for %s",async role=>{state.role=role;expect((await saveKnowledgeArticle("org",input)).ok).toBe(false);expect(state.writes).toEqual([])})
+it.each(["org_admin","team_lead"])("permits %s to create an article in the verified workspace",async role=>{state.role=role;expect((await saveKnowledgeArticle("org",input)).ok).toBe(true);expect(state.writes).toEqual([expect.objectContaining({organization_id:"org",status:"draft"})])})
+it("rejects another workspace before writing",async()=>{state.role="org_admin";state.allowed=false;expect((await saveKnowledgeArticle("other",input)).ok).toBe(false);expect(state.writes).toEqual([])})
+it("rejects signed-out writes",async()=>{state.role="org_admin";state.signedIn=false;expect((await saveKnowledgeArticle("org",input)).ok).toBe(false);expect(state.writes).toEqual([])})
+it("requires a version when updating",async()=>{state.role="team_lead";expect((await saveKnowledgeArticle("org",{...input,id:"article"})).ok).toBe(false);expect(state.writes).toEqual([])})
+it("scopes updates to workspace, article and expected version",async()=>{state.role="team_lead";expect((await saveKnowledgeArticle("org",{...input,id:"article",expectedUpdatedAt:"version"})).ok).toBe(true);expect(state.filters).toEqual(expect.arrayContaining([["organization_id","org"],["id","article"],["updated_at","version"]]))})
+it("reports concurrent modifications instead of silently overwriting",async()=>{state.role="team_lead";state.conflict=true;expect(await saveKnowledgeArticle("org",{...input,id:"article",expectedUpdatedAt:"old"})).toMatchObject({ok:false,message:expect.stringContaining("changed")})})
