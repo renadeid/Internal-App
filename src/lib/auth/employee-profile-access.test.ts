@@ -31,7 +31,8 @@ it.each(["member", "viewer", "admin"])("hides another employee's profile from %s
   expect(await getEmployeeProfile("org", "employee")).toEqual({ status: "missing" })
   expect(getOrganizationProjects).not.toHaveBeenCalled()
   expect(getOrganizationTasks).not.toHaveBeenCalled()
-  expect(state.tables.every(table => table === "organization_memberships")).toBe(true)
+  expect(state.tables).toEqual(["organization_memberships", "organization_memberships"])
+  expect(state.tables).not.toContain("project_members")
 })
 
 it.each(["org_admin", "team_lead"])("returns permitted employee work for %s", async role => {
@@ -68,5 +69,6 @@ it.each(["member", "viewer", "admin"])("allows %s to view their own work without
   expect(await getEmployeeProfile("org", "employee")).toEqual({ status: "missing" })
   expect(getOrganizationProjects).not.toHaveBeenCalled()
   expect(getOrganizationTasks).not.toHaveBeenCalled()
-  expect(state.tables.every(table => table === "organization_memberships")).toBe(true)
+  expect(state.tables).toEqual(["organization_memberships", "organization_memberships"])
+  expect(state.tables).not.toContain("project_members")
 })
