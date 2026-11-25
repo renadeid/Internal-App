@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { campaignStatusLabel, campaignStatusValues, campaignTypeLabel, campaignTypeValues, type OrganizationCampaign } from "@/lib/auth/organization-campaigns"
 import { dateRange } from "@/lib/dates"
+import { compareCampaigns } from "@/lib/campaign-sort"
 
 const stages = {
   planning: { icon: Sparkles, tone: "text-violet-600 dark:text-violet-300", bar: "bg-violet-500" },
@@ -38,7 +39,7 @@ export function CampaignCollection({ campaigns, showProject, showArchived, canCr
     (type === "all" || campaign.type === type) &&
     (project === "all" || campaign.projectId === project) &&
     (!needle || [campaign.name, campaign.description, campaign.ownerName, campaign.projectName].join(" ").toLowerCase().includes(needle))
-  ).sort((a, b) => sort === "name" ? a.name.localeCompare(b.name) : sort === "starting" ? a.startsOn.localeCompare(b.startsOn) : a.endsOn.localeCompare(b.endsOn))
+  ).sort((a, b) => compareCampaigns(a, b, sort))
   const hasFilters = Boolean(needle || status !== "all" || type !== "all" || project !== "all")
   function clearFilters() { setQuery(""); setStatus("all"); setType("all"); setProject("all") }
 
@@ -62,7 +63,7 @@ export function CampaignCollection({ campaigns, showProject, showArchived, canCr
           {!showProject ? <select aria-label="Filter campaigns by status" className={selectClass} value={status} onChange={event => setStatus(event.target.value)}><option value="all">All statuses</option>{campaignStatusValues.map(value => <option key={value} value={value}>{campaignStatusLabel(value)}</option>)}</select> : null}
           <select aria-label="Filter campaigns by type" className={selectClass} value={type} onChange={event => setType(event.target.value)}><option value="all">All channels</option>{campaignTypeValues.map(value => <option key={value} value={value}>{campaignTypeLabel(value)}</option>)}</select>
           {showProject ? <select aria-label="Filter campaigns by project" className={selectClass} value={project} onChange={event => setProject(event.target.value)}><option value="all">All projects</option>{projects.map(value => <option key={value.id} value={value.id}>{value.name}</option>)}</select> : null}
-          <select aria-label="Sort campaigns" className={selectClass} value={sort} onChange={event => setSort(event.target.value)}><option value="ending">Ending soonest</option><option value="starting">Starting soonest</option><option value="name">Name A–Z</option></select>
+          <select aria-label="Sort campaigns" className={selectClass} value={sort} onChange={event => setSort(event.target.value)}><option value="ending">End date (earliest first)</option><option value="starting">Start date (earliest first)</option><option value="name">Name A–Z</option></select>
         </div></div>
       </div>
       <div className="flex items-center justify-between gap-3 px-5 py-3 text-xs text-muted-foreground"><p role="status">{filtered.length} {filtered.length === 1 ? "campaign" : "campaigns"}{hasFilters ? " matching your filters" : ""}</p>{hasFilters ? <button className="font-medium text-primary hover:underline focus-visible:outline-2 focus-visible:outline-ring" onClick={clearFilters}>Clear filters</button> : null}</div>
