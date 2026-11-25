@@ -47,7 +47,7 @@ export const workspaceArtifacts: WorkspaceArtifact[] = [
     summary: "Prepare a useful asset record and check the file can be reached and downloaded.", href: "/assets", action: "Open assets library",
     sections: [
       { title: "Prepare the record", items: ["Add a descriptive name, type, collection and tags.", "Add the file or external URL and check it points to the intended source.", "Associate the record with the relevant project or campaign where appropriate."] },
-      { title: "Check the handover", items: ["Use Download for a direct file URL. If the host blocks downloading or requires authentication, open the source and download there.", "Records without a file URL cannot be downloaded. External webpage links open at their source.", "The current Assets Library stores records in this browser and references external URLs. Central file uploads are not connected, and library visibility labels are a preview rather than enforced file permissions.", "Keep original files in a source with the intended sharing permissions."] },
+      { title: "Check the handover", items: ["Use Download for a direct file URL. If the host blocks downloading or requires authentication, open the source and download there.", "Records without a file URL cannot be downloaded. External webpage links open at their source.", "Assets Library stores shared files privately in Supabase. Company files are available to organization members; project files require full project access. Download links check access and expire shortly after issue.", "Keep original files in a source with the intended sharing permissions."] },
     ],
   },
   {

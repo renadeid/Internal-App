@@ -406,5 +406,29 @@ try {
  check(await scalar('select owner_id from public.projects where id=$1',[departureProject]),ids.admin,'project ownership retained by recipient');
  check(await scalar('select owner_id from public.campaigns where id=$1',[departureCampaign]),ids.admin,'campaign ownership retained by recipient');
  check(await scalar('select assignee_id from public.tasks where id=$1',[departureTask]),ids.admin,'task assigned to recipient');
+ // Shared asset folders enforce the same audience as their files.
+ await actor(ids.admin);
+ const companyFolder=await scalar('select public.create_asset_folder($1,$2,$3)',[ids.org,'Brand images',null]);
+ const projectFolder=await scalar('select public.create_asset_folder($1,$2,$3)',[ids.org,'Project images',fileProject]);
+ await denied('select public.create_asset_folder($1,$2,$3)',[ids.org,' BRAND  IMAGES ',null],'23505');
+ await actor(ids.viewer);check(await scalar('select count(*)::int from public.asset_folders where id=$1',[companyFolder]),1,'viewer reads company folder');
+ await denied('select public.create_asset_folder($1,$2,$3)',[ids.org,'Viewer folder',null]);
+ await actor(ids.second);await denied('select public.create_asset_folder($1,$2,$3)',[ids.org,'Admin folder',null]);
+ await actor(limitedEmployee);check(await scalar('select count(*)::int from public.asset_folders where id=$1',[projectFolder]),0,'assigned-only access hides project folder');
+ await actor(unrelatedEmployee);check(await scalar('select count(*)::int from public.asset_folders where id=$1',[companyFolder]),0,'other organization cannot read folder');
+ await db.exec('reset role; set role service_role');
+ const folderAsset=await scalar('select gen_random_uuid()'),folderVersion=await scalar('select gen_random_uuid()');
+ const folderPayload={...filePayload,assetId:folderAsset,versionId:folderVersion,name:'Folder image',contentHash:'b'.repeat(64),folderId:projectFolder};
+ check(await scalar('select public.register_shared_asset($1,$2::jsonb)',[ids.admin,JSON.stringify(folderPayload)]),folderAsset,'verified file is registered directly in selected folder');
+ await actor(ids.admin);check(await scalar('select folder_id from public.assets where id=$1',[folderAsset]),projectFolder,'folder selection is stored centrally');
+ await denied('select public.move_asset_to_folder($1,$2)',[folderAsset,companyFolder],'22023');
+ check(await scalar('select folder_id from public.assets where id=$1',[folderAsset]),projectFolder,'failed move preserves original folder and access');
+ await db.query('select public.move_asset_to_folder($1,$2)',[folderAsset,null]);checks++;
+ check(await scalar('select folder_id from public.assets where id=$1',[folderAsset]),null,'file can move back to root without deleting it');
+ await db.query('select public.move_asset_to_folder($1,$2)',[folderAsset,projectFolder]);checks++;
+ await actor(ids.viewer);await denied('select public.move_asset_to_folder($1,$2)',[folderAsset,null]);
+ await actor(ids.admin);await denied("update public.assets set visibility='company' where id=$1",[folderAsset],'23514');
+ await denied('insert into public.asset_project_links(organization_id,project_id,asset_id) values($1,$2,$3)',[ids.org,departureProject,folderAsset],'23514');
+ check((await scalar('select public.list_shared_assets($1)',[ids.org])).find(a=>a.id===folderAsset).folderId,projectFolder,'library includes authorized folder identity');
  console.log(`Passed ${checks} PostgreSQL permission and workflow checks across all migrations.`)
 } catch (error) { console.error(JSON.stringify({message:error.message,code:error.code,query:error.query})); process.exitCode=1 } finally { await db.close() }

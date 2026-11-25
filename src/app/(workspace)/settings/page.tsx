@@ -50,10 +50,7 @@ export default async function SettingsPage() {
               <dt className="text-muted-foreground">Email</dt>
               <dd className="mt-0.5">{identity.email}</dd>
             </div>
-            <div>
-              <dt className="text-muted-foreground">Department</dt>
-              <dd className="mt-0.5">Not set</dd>
-            </div>
+
           </dl>
         </section>
         <section className="min-w-0 p-5 sm:p-7">
@@ -69,10 +66,7 @@ export default async function SettingsPage() {
               <dt className="text-muted-foreground">Workspace</dt>
               <dd className="mt-0.5">Roaya Connect</dd>
             </div>
-            <div>
-              <dt className="text-muted-foreground">Active department</dt>
-              <dd className="mt-0.5">Marketing</dd>
-            </div>
+
           </dl>
         </section>
       </div>

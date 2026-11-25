@@ -1,12 +1,3 @@
-import { activity as initialActivity } from "@/lib/mock-data/activity"
-import {
-  initialAssetComments,
-  initialAssetVersions,
-  initialAssets,
-} from "@/lib/mock-data/assets"
-import { initialCampaigns } from "@/lib/mock-data/campaigns"
-import { initialDeliverables } from "@/lib/mock-data/deliverables"
-import { tasks as initialTasks } from "@/lib/mock-data/tasks"
 import { marketingManagerId } from "@/lib/mock-data/team"
 import type {
   ActivityItem,
@@ -34,13 +25,13 @@ const STORAGE_KEY = "company-hub.records.v1"
 
 function seed(): Records {
   return {
-    campaigns: initialCampaigns,
-    tasks: initialTasks,
-    deliverables: initialDeliverables,
-    activity: initialActivity,
-    assets: initialAssets,
-    assetComments: initialAssetComments,
-    assetVersions: initialAssetVersions,
+    campaigns: [],
+    tasks: [],
+    deliverables: [],
+    activity: [],
+    assets: [],
+    assetComments: [],
+    assetVersions: [],
   }
 }
 

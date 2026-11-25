@@ -5,10 +5,10 @@ import { useRouter } from "next/navigation"
 import { useEffect, useId, useMemo, useRef, useState } from "react"
 import { Search } from "lucide-react"
 
-import { useWorkspace } from "@/components/workspace/workspace-provider"
+import { useLiveWorkspace } from "@/components/workspace/live-workspace-provider"
 import { mainNav, utilityNav, workspaceNav } from "@/components/layout/navigation"
-import { assetPath } from "@/lib/mock-data/assets"
-import { campaignPath } from "@/lib/mock-data/campaigns"
+
+
 import { Input } from "@/components/ui/input"
 import type { AppHref } from "@/lib/types"
 import { cn } from "@/lib/utils"
@@ -24,7 +24,7 @@ type SearchResult = {
 const pages = [...mainNav, ...workspaceNav, ...utilityNav]
 
 export function SearchField() {
-  const { projects, tasks, campaigns, assets } = useWorkspace()
+  const { result: live } = useLiveWorkspace()
   const router = useRouter()
   const [query, setQuery] = useState("")
   const [open, setOpen] = useState(false)
@@ -32,8 +32,8 @@ export function SearchField() {
   const listId = useId()
 
   const results = useMemo(
-    () => buildResults(query, projects, tasks, campaigns, assets),
-    [assets, campaigns, projects, query, tasks]
+    () => buildResults(query, live?.status==="ready"?live.projects:[], live?.status==="ready"?live.tasks:[], live?.status==="ready"?live.campaigns:[], live?.status==="ready"?live.assets:[]),
+    [live, query]
   )
 
   useEffect(() => {
@@ -130,10 +130,10 @@ export function SearchField() {
 
 function buildResults(
   query: string,
-  projects: { id: string; name: string; department: string; description: string }[],
+  projects: { id: string; name: string; leadDepartment: string|null; description: string }[],
   tasks: { id: string; title: string; status: string }[],
   campaigns: { id: string; name: string; status: string; type: string }[],
-  assets: { id: string; name: string; type: string; archived: boolean }[]
+  assets: { id: string; name: string; type: string; archivedAt?: string|null }[]
 ): SearchResult[] {
   const normalized = query.trim().toLowerCase()
   const pageResults: SearchResult[] = pages
@@ -150,17 +150,17 @@ function buildResults(
 
   const projectResults: SearchResult[] = projects
     .filter((project) =>
-      `${project.name} ${project.department} ${project.description}`
+      `${project.name} ${project.leadDepartment??""} ${project.description}`
         .toLowerCase()
         .includes(normalized)
     )
     .slice(0, 5)
     .map((project) => ({
       id: `project-${project.id}`,
-      group: "Preview projects",
+      group: "Projects",
       label: project.name,
-      detail: "Sample project",
-      href: "/projects",
+      detail: project.leadDepartment||"Project",
+      href: `/projects/${project.id}`,
     }))
 
   const campaignResults: SearchResult[] = campaigns
@@ -175,12 +175,12 @@ function buildResults(
       group: "Campaigns",
       label: campaign.name,
       detail: campaign.status,
-      href: campaignPath(campaign.id),
+      href: `/workspaces/marketing/campaigns/${campaign.id}`,
     }))
 
   const assetResults: SearchResult[] = assets
     .filter(
-      (asset) => !asset.archived && asset.name.toLowerCase().includes(normalized)
+      (asset) => !asset.archivedAt && asset.name.toLowerCase().includes(normalized)
     )
     .slice(0, 4)
     .map((asset) => ({
@@ -188,7 +188,7 @@ function buildResults(
       group: "Assets",
       label: asset.name,
       detail: asset.type,
-      href: assetPath(asset.id),
+      href: `/assets/${asset.id}`,
     }))
 
   const taskResults: SearchResult[] = tasks

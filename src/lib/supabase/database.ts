@@ -5,6 +5,10 @@
 export type Database = {
   public: {
     Tables: {
+      asset_folders:{Row:{id:string;organization_id:string;name:string;visibility:"company"|"project_members";project_id:string|null;created_by:string|null;created_at:string};Insert:never;Update:never;Relationships:[]}
+      activity_events: {Row:{id:string;organization_id:string;actor_id:string|null;verb:string;summary:string;project_id:string|null;campaign_id:string|null;task_id:string|null;deliverable_id:string|null;asset_id:string|null;created_at:string};Insert:never;Update:never;Relationships:[]}
+      notifications: {Row:{id:string;organization_id:string;recipient_id:string;activity_event_id:string|null;title:string;read_at:string|null;created_at:string};Insert:never;Update:{read_at?:string|null};Relationships:[]}
+
       project_invitations: {
         Row: { id: string; organization_id: string; project_id: string; profile_id: string; created_at: string; history_access: "full_history" | "assigned_only"; can_update_assigned_status: boolean; task_ids: string[] }
         Insert: { organization_id: string; project_id: string; profile_id: string; history_access?: "full_history" | "assigned_only" }
@@ -355,6 +359,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_asset_folder:{Args:{target_organization:string;folder_name:string;folder_project?:string|null};Returns:string}
+      move_asset_to_folder:{Args:{target_asset:string;target_folder:string|null};Returns:undefined}
       shared_asset_upload_access: { Args: {target_organization:string}; Returns:unknown }
       list_shared_assets: { Args: {target_organization:string}; Returns:unknown }
       edit_shared_asset: { Args: {target_asset:string;details:Record<string,unknown>}; Returns:undefined }

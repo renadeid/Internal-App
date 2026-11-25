@@ -1,29 +1,8 @@
-import type { Metadata } from "next"
-
-import { OrganizationCampaignRecord } from "@/components/marketing/organization-campaign-record"
-import { CampaignDetail } from "@/components/marketing/campaign-detail"
-import { initialCampaigns } from "@/lib/mock-data/campaigns"
-
-import { isPreviewCampaignId } from "./preview-campaign-id"
-
-type CampaignPageProps = {
-  params: Promise<{ id: string }>
-}
-
-export function generateStaticParams() {
-  return initialCampaigns.map((campaign) => ({ id: campaign.id }))
-}
-
-export async function generateMetadata({
-  params,
-}: CampaignPageProps): Promise<Metadata> {
-  const { id } = await params
-  const campaign = initialCampaigns.find((item) => item.id === id)
-  return { title: campaign?.name ?? "Campaign" }
-}
-
-export default async function CampaignPage({ params }: CampaignPageProps) {
-  const { id } = await params
-  if (isPreviewCampaignId(id)) return <CampaignDetail campaignId={id} />
-  return <OrganizationCampaignRecord campaignId={id} />
-}
+import {Suspense} from "react"
+import type {Metadata} from "next"
+import {notFound} from "next/navigation"
+import {OrganizationCampaignRecord} from "@/components/marketing/organization-campaign-record"
+export const metadata:Metadata={title:"Campaign"}
+type Props={params:Promise<{id:string}>}
+export default function CampaignPage({params}:Props){return <Suspense fallback={<p>Loading campaign…</p>}><CampaignRoute params={params}/></Suspense>}
+async function CampaignRoute({params}:Props){const {id}=await params;if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id))notFound();return <OrganizationCampaignRecord campaignId={id}/>}

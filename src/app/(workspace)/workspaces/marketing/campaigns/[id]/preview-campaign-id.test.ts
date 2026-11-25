@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs"
+
 
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
@@ -36,7 +36,7 @@ vi.mock("@/lib/auth/campaign-update-actions", () => ({
   getOrganizationCampaignUpdateAccess: vi.fn(),
 }))
 
-import { CampaignDetail } from "@/components/marketing/campaign-detail"
+
 import { OrganizationCampaignRecord } from "@/components/marketing/organization-campaign-record"
 
 import CampaignPage from "./page"
@@ -93,40 +93,11 @@ describe("preview campaign id classification", () => {
   )
 })
 
-describe("campaign route selection", () => {
-  beforeEach(() => {
-    getOrganizationCampaign.mockClear()
-    createOrganizationCampaign.mockClear()
-    updateOrganizationCampaign.mockClear()
-    setOrganizationCampaignStatus.mockClear()
-  })
-
-  it("uses the classification helper", () => {
-    const source = readFileSync(new URL("./page.tsx", import.meta.url), "utf8")
-    expect(source).toContain('from "./preview-campaign-id"')
-    expect(source).toContain("isPreviewCampaignId(id)")
-  })
-
-  it.each([
-    ...previewSeedCampaignIds,
-    browserPreviewId,
-    bareCampaignId,
-    "campaign-other",
-    "campaign-123",
-    "",
-  ])("selects the detail component for %s", async (id) => {
-    const element = await CampaignPage({ params: Promise.resolve({ id }) })
-    expect(element.type).toBe(isPreviewCampaignId(id) ? CampaignDetail : OrganizationCampaignRecord)
-    expect(element.props).toEqual({ campaignId: id })
-  })
-
-  it("does not call campaign server actions while choosing the route", async () => {
-    await CampaignPage({ params: Promise.resolve({ id: browserPreviewId }) })
-    await CampaignPage({ params: Promise.resolve({ id: bareCampaignId }) })
-    await CampaignPage({ params: Promise.resolve({ id: "campaign-other" }) })
-    expect(getOrganizationCampaign).not.toHaveBeenCalled()
-    expect(createOrganizationCampaign).not.toHaveBeenCalled()
-    expect(updateOrganizationCampaign).not.toHaveBeenCalled()
-    expect(setOrganizationCampaignStatus).not.toHaveBeenCalled()
-  })
+vi.mock("next/navigation",()=>({notFound:()=>{throw Error("NOT_FOUND")}}))
+async function resolveRoute(id:string){const shell=CampaignPage({params:Promise.resolve({id})});const child=shell.props.children;return child.type(child.props)}
+describe("live campaign routes",()=>{
+ beforeEach(()=>{getOrganizationCampaign.mockClear();createOrganizationCampaign.mockClear();updateOrganizationCampaign.mockClear();setOrganizationCampaignStatus.mockClear()})
+ it.each([...previewSeedCampaignIds,browserPreviewId,"campaign-other",""])("rejects legacy demo address %s",async id=>{await expect(resolveRoute(id)).rejects.toThrow("NOT_FOUND")})
+ it("opens real database identifiers",async()=>{const element=await resolveRoute(bareCampaignId);expect(element.type).toBe(OrganizationCampaignRecord);expect(element.props).toEqual({campaignId:bareCampaignId})})
+ it("does not execute mutation actions while routing",async()=>{await resolveRoute(bareCampaignId);expect(createOrganizationCampaign).not.toHaveBeenCalled();expect(updateOrganizationCampaign).not.toHaveBeenCalled();expect(setOrganizationCampaignStatus).not.toHaveBeenCalled()})
 })

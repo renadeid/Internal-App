@@ -2,7 +2,7 @@
 import {createHash,randomUUID} from "node:crypto"
 import {createClient} from "@/lib/supabase/server"
 import {getAccessibleOrganizations} from "@/lib/auth/current-organizations"
-import {sharedAssetMaxBytes,sharedFileKind,validateSharedDraft,type SharedAsset,type SharedAssetAccess,type SharedAssetDraft} from "@/lib/shared-assets"
+import {sharedAssetMaxBytes,sharedFileKind,validateSharedDraft,type SharedAsset,type SharedAssetAccess,type SharedAssetDraft,type AssetFolder} from "@/lib/shared-assets"
 import {readAssetUpload,signAssetUpload,sharedAssetAdmin,sharedAssetBucket,sharedStoragePath,validateSharedFile,type AssetUploadTicket} from "@/lib/shared-asset-storage"
 
 async function context(organizationId:string){
@@ -10,8 +10,8 @@ async function context(organizationId:string){
  const client=await createClient();const {data,error}=await client.auth.getUser();if(error||!data.user)throw Error("Sign in to continue.")
  return {client,actorId:data.user.id}
 }
-export async function getSharedAssets(organizationId:string):Promise<{ok:true;assets:SharedAsset[];access:SharedAssetAccess}|{ok:false;message:string}>{
- try{const {client}=await context(organizationId);const [rows,access]=await Promise.all([client.rpc("list_shared_assets",{target_organization:organizationId}),client.rpc("shared_asset_upload_access",{target_organization:organizationId})]);if(rows.error||access.error||!Array.isArray(rows.data)||!access.data)throw Error("Shared files are not available. The shared-files database update may still need to be applied.");return {ok:true,assets:rows.data as SharedAsset[],access:access.data as SharedAssetAccess}}
+export async function getSharedAssets(organizationId:string):Promise<{ok:true;assets:SharedAsset[];access:SharedAssetAccess;folders:AssetFolder[]}|{ok:false;message:string}>{
+ try{const {client}=await context(organizationId);const [rows,access]=await Promise.all([client.rpc("list_shared_assets",{target_organization:organizationId}),client.rpc("shared_asset_upload_access",{target_organization:organizationId})]);if(rows.error||access.error||!Array.isArray(rows.data)||!access.data)throw Error("Shared files are not available. The shared-files database update may still need to be applied.");const folders=await client.from("asset_folders").select("id,name,visibility,project_id").eq("organization_id",organizationId).order("name");if(folders.error)throw Error("Folders are not available. Apply the asset-folders database update.");return {ok:true,assets:rows.data as SharedAsset[],access:access.data as SharedAssetAccess,folders:folders.data}}
  catch(error){return {ok:false,message:error instanceof Error?error.message:"Files could not be loaded."}}
 }
 export async function prepareSharedAsset(organizationId:string,draftInput:SharedAssetDraft,file:{name:string;size:number;sha256?:string}){
@@ -23,6 +23,7 @@ export async function prepareSharedAsset(organizationId:string,draftInput:Shared
   if(file?.size>sharedAssetMaxBytes)throw Error("This file exceeds the 20 MB limit. Choose a smaller file.")
   if(!file||typeof file.name!=="string"||!file.name.trim()||file.name.length>200||!Number.isInteger(file.size)||file.size<1||file.size>sharedAssetMaxBytes)throw Error("Choose a file up to 20 MB.")
   const kind=sharedFileKind(file.name);if(!kind)throw Error("Choose an image, PDF, Office file, ZIP, text, CSV or MP4.")
+  if(draft.folderId){const folder=await client.from("asset_folders").select("visibility,project_id").eq("organization_id",organizationId).eq("id",draft.folderId).single();if(folder.error||!folder.data)throw Error("Folder unavailable.");if(draft.visibility!==folder.data.visibility||(folder.data.project_id&&draft.projectId!==folder.data.project_id))throw Error("Upload access must match the folder.")}
   const ticket:AssetUploadTicket={organizationId,actorId,assetId:randomUUID(),versionId:randomUUID(),fileName:file.name.replace(/[\r\n/\\]/g,"_"),size:file.size,mime:kind.mime,type:kind.type,expires:Date.now()+15*60*1000,draft}
   const path=sharedStoragePath(organizationId,ticket.assetId,ticket.versionId);const admin=sharedAssetAdmin()
   if(file.sha256&&!/^[0-9a-f]{64}$/.test(file.sha256))throw Error("Invalid file fingerprint.")
@@ -73,3 +74,6 @@ export async function deleteSharedAsset(organizationId:string,assetId:string,con
   return {ok:true as const,message:"Asset and stored file deleted."}
  }catch(error){return {ok:false as const,message:error instanceof Error?error.message:"File could not be deleted."}}
 }
+
+export async function createAssetFolder(organizationId:string,name:string,projectId:string|null){try{const {client}=await context(organizationId);const result=await client.rpc("create_asset_folder",{target_organization:organizationId,folder_name:name,folder_project:projectId});if(result.error)throw Error(result.error.code==="23505"?"A folder with this name already exists.":"Folder could not be created. Check your project file permissions.");return {ok:true as const,id:result.data}}catch(e){return {ok:false as const,message:e instanceof Error?e.message:"Folder could not be created."}}}
+export async function moveAssetToFolder(organizationId:string,assetId:string,folderId:string|null){try{const {client}=await context(organizationId);const rows=await client.rpc("list_shared_assets",{target_organization:organizationId});if(rows.error||!(rows.data as SharedAsset[])?.some(a=>a.id===assetId&&a.canEdit))throw Error("Edit permission required.");const result=await client.rpc("move_asset_to_folder",{target_asset:assetId,target_folder:folderId});if(result.error)throw Error(result.error.code==="22023"?"Choose a folder with the same company or project access as this file.":"File could not be moved.");return {ok:true as const}}catch(e){return {ok:false as const,message:e instanceof Error?e.message:"File could not be moved."}}}

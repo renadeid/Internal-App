@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { LiveWorkspaceProvider } from "@/components/workspace/live-workspace-provider"
 
 import { useOrganization } from "@/components/auth/organization-provider"
 import { ProjectInvitationsBanner, ProjectInvitationsProvider } from "@/components/projects/project-invitations"
@@ -35,7 +36,7 @@ export function AppShell({
   const [createOpen, setCreateOpen] = useState(false)
 
   return (
-    <ProjectInvitationsProvider key={identity.email}>
+    <LiveWorkspaceProvider key={identity.email}><ProjectInvitationsProvider key={identity.email}>
     <div className="roaya-workspace flex min-h-svh text-foreground">
       <a
         href="#main-content"
@@ -84,6 +85,6 @@ export function AppShell({
         />
       ) : null}
     </div>
-    </ProjectInvitationsProvider>
+    </ProjectInvitationsProvider></LiveWorkspaceProvider>
   )
 }

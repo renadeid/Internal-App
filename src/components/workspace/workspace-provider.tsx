@@ -11,10 +11,10 @@ import {
 
 import { useOrganization } from "@/components/auth/organization-provider"
 import { guardPreviewMutation } from "@/lib/auth/preview-permissions"
-import { initialNotifications } from "@/lib/mock-data/activity"
+
 import { assetPath, kindForType } from "@/lib/mock-data/assets"
 import { campaignPath } from "@/lib/mock-data/campaigns"
-import { initialProjects } from "@/lib/mock-data/projects"
+
 import { currentUserId, marketingManagerId } from "@/lib/mock-data/team"
 import { formatIsoDate, nowStamp } from "@/lib/dates"
 import {
@@ -103,9 +103,9 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     getRecordsServerSnapshot
   )
   const records = useMemo(() => parseRecords(recordsRaw), [recordsRaw])
-  const [projects, setProjects] = useState<Project[]>(initialProjects)
+  const [projects, setProjects] = useState<Project[]>([])
   const [notifications, setNotifications] =
-    useState<NotificationItem[]>(initialNotifications)
+    useState<NotificationItem[]>([])
   const [lastCreated, setLastCreated] = useState<CreatedProject | null>(null)
   const [actorId, setActorId] = useState(currentUserId)
 

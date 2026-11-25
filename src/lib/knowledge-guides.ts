@@ -32,7 +32,7 @@ export const knowledgeGuides = [
  "Search Assets Library by name, description or tags. Filter by type, project, campaign, owner or collection, and switch between grid and list view.",
  "Choose Download on a card, list row or detail page. A direct file URL is needed; records without a file link cannot be downloaded.",
  "If the source requires sign-in or blocks downloading, use Open source and download from the original website. External webpage links open at their source.",
- "The current library stores asset records in this browser and points at external URLs; it does not upload or centrally store files. Library visibility labels are currently a preview, not enforced file permissions. Source permissions still apply.",
+ "The Assets Library stores files privately and shares them across devices. Company files are available to organization members. Project files require full project access; assigned-tasks-only access does not include project files. Download routes verify access before issuing short-lived links.",
  ], href: "/assets", linkLabel: "Open Assets Library" },
  { id: "public-links", category: "Assets & sharing", title: "Share outside the company", summary: "Create a view-only link that does not require sign-in.", steps: [
  "As Super admin, open a project or asset detail page and choose Share with external viewers. Review what will be shared, then create a public view-only link.",
