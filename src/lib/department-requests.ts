@@ -26,9 +26,13 @@ export function requestStatusLabel(request:Pick<DepartmentRequest,"status"|"task
  if (request.status==="submitted") return "Awaiting triage"
  if (request.status==="declined") return "Declined"
  if (request.status==="cancelled") return "Cancelled"
+ return "Accepted"
+}
+export function requestTaskProgressLabel(request:Pick<DepartmentRequest,"status"|"taskStatus"|"taskArchived">) {
+ if (request.status!=="accepted") return null
  if (request.taskArchived) return "Task archived"
  if (request.taskStatus==="done") return "Completed"
  if (request.taskStatus==="in_review") return "In review"
  if (request.taskStatus==="in_progress") return "In progress"
- return request.taskStatus ? "Scheduled" : "Task unavailable"
+ return request.taskStatus ? "To do" : "Task unavailable"
 }

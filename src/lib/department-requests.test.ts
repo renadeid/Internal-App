@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { requestStatusLabel, validateDepartmentRequest, type DepartmentRequestDraft } from "./department-requests"
+import { requestTaskProgressLabel, requestStatusLabel, validateDepartmentRequest, type DepartmentRequestDraft } from "./department-requests"
 const draft:DepartmentRequestDraft={title:"  Launch design  ",brief:"  Create the approved launch artwork.  ",departmentId:"2529044e-c32c-442f-8d92-56580b7d01ef",referenceUrl:"https://example.com/brief",priority:"high",dueOn:"2026-12-01"}
 describe("department request brief",()=>{
  it("normalizes text without altering its department, date or priority",()=>{expect(validateDepartmentRequest(draft)).toEqual({...draft,title:"Launch design",brief:"Create the approved launch artwork."})})
@@ -9,7 +9,7 @@ describe("department request brief",()=>{
 describe("request progress",()=>{
  it.each([
   ["submitted",null,false,"Awaiting triage"],["declined",null,false,"Declined"],["cancelled",null,false,"Cancelled"],
-  ["accepted","todo",false,"Scheduled"],["accepted","in_progress",false,"In progress"],["accepted","in_review",false,"In review"],
+  ["accepted","todo",false,"To do"],["accepted","in_progress",false,"In progress"],["accepted","in_review",false,"In review"],
   ["accepted","done",false,"Completed"],["accepted","todo",true,"Task archived"],["accepted",null,false,"Task unavailable"],
- ] as const)("describes %s / %s",(status,taskStatus,taskArchived,label)=>{expect(requestStatusLabel({status,taskStatus,taskArchived})).toBe(label)})
+ ] as const)("describes %s / %s",(status,taskStatus,taskArchived,label)=>{expect(status==="accepted"?requestTaskProgressLabel({status,taskStatus,taskArchived}):requestStatusLabel({status,taskStatus,taskArchived})).toBe(label); if(status==="accepted") expect(requestStatusLabel({status,taskStatus,taskArchived})).toBe("Accepted")})
 })
