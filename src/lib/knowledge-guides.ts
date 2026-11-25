@@ -4,6 +4,7 @@ export const knowledgeGuides = [
  "Super admin manages members, roles and project access, creates projects and can permanently delete projects.",
  "Admin views and edits existing organization work. Creating, deleting, archiving, restoring and changing permissions are unavailable.",
  "Owner (Team lead) creates, edits and assigns tasks in projects where they have full-history, non-viewer membership. Assignees must already belong to that project. Team leads cannot archive or delete tasks.",
+ "Members can create projects only after a Team lead or Super admin enables Create project in Settings. Members see their own project and task tabs in People; colleagues’ profiles show the Overview only.",
  "External viewers open explicitly shared public links without an account. They see the shared snapshot only. The Viewer role in the members list is a separate, signed-in organization role.",
  ], href: "/people", linkLabel: "Open People & Onboarding" },
  { id: "new-member", category: "People & roles", title: "Give a new employee access", summary: "Organization membership and project access are separate steps.", steps: [
@@ -29,9 +30,9 @@ export const knowledgeGuides = [
  "Deletion removes the project's tasks, campaigns, deliverables, invitations, memberships and project activity. Linked library assets and their files are kept. A deleted project cannot be restored.",
  ], href: "/projects", linkLabel: "Open Projects" },
  { id: "downloads", category: "Assets & sharing", title: "Find and download an asset", summary: "Find files in the library and download from their sources.", steps: [
- "Search Assets Library by name, description or tags. Filter by type, project, campaign, owner or collection, and switch between grid and list view.",
- "Choose Download on a card, list row or detail page. A direct file URL is needed; records without a file link cannot be downloaded.",
- "If the source requires sign-in or blocks downloading, use Open source and download from the original website. External webpage links open at their source.",
+ "Open Assets Library. All assets includes files inside every folder. Choose a department to see files owned by its members, or filter by file type and project.",
+ "Choose View asset to read its details, or Download to retrieve an uploaded file. All projects lists projects you can access, including those without files.",
+ "Use folders to organize files. Uploads support one file at a time from the library, or up to 25 files from a folder, with a 20 MB limit per file.",
  "The Assets Library stores files privately and shares them across devices. Company files are available to organization members. Project files require full project access; assigned-tasks-only access does not include project files. Download routes verify access before issuing short-lived links.",
  ], href: "/assets", linkLabel: "Open Assets Library" },
  { id: "public-links", category: "Assets & sharing", title: "Share outside the company", summary: "Create a view-only link that does not require sign-in.", steps: [
@@ -41,4 +42,7 @@ export const knowledgeGuides = [
  "Use Revoke link on the original page to stop future access. This cannot retract copies or file URLs already obtained. Source files keep their own access rules.",
  "Localhost links only work on the same computer. To share with another device or person, use the publicly deployed address of Roaya Connect.",
  ], href: "/projects", linkLabel: "Choose a project" },
+ { id: "create-project-permission", category: "Projects & tasks", title: "Enable project creation for a Member", summary: "Grant or revoke Create project without changing an employee’s role.", steps: ["Sign in as a Team lead or Super admin and open Settings.", "Under Project creation permissions, choose Manage access. Search by name or email, or filter by Allowed to create and Not allowed.", "Enable the switch beside the Member. Ask them to refresh their page, then choose Quick create or Create project from Projects.", "Turn the switch off to revoke future project creation. It does not remove access to existing projects. Changing an organization role clears any existing creation grant."], href: "/settings", linkLabel: "Manage permissions" },
+ { id: "welcome-tour", category: "People & roles", title: "Find your way around Connect", summary: "Replay the welcome tour and find help whenever you need it.", steps: ["Open your profile menu and choose Replay welcome tour to revisit the guided introduction.", "The tour shows on the first dashboard visit. Finishing or skipping it saves that choice in this browser, so it does not repeat on every refresh.", "Use Ask Connect for help with the application, or browse the App guides here for step-by-step instructions."], href: "/", linkLabel: "Open Dashboard" },
+ { id: "marketing-campaigns", category: "Projects & tasks", title: "Plan and find marketing campaigns", summary: "Browse campaign stages, owners and schedules in Marketing.", steps: ["Open Marketing from Department workspaces or Dashboard Quick access.", "Select Planning, Active, On Hold or Completed to filter campaigns. Search by name, owner or project and use the channel and project filters to narrow results.", "Open a campaign to see its details. If Create campaign is available, choose a project, owner, channel, dates and campaign brief.", "Show archived includes archived work. Campaigns and creation options depend on your existing project permissions."], href: "/workspaces/marketing", linkLabel: "Open Marketing" },
 ] as const
