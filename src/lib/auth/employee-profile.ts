@@ -13,6 +13,7 @@ export type EmployeeProfile = {
   workUnavailable: boolean
   transferRecipients?: OrganizationPerson[]
   canManage: boolean
+  canViewWork: boolean
   isSelf: boolean
 }
 export type EmployeeProfileResult = { status: "ready"; profile: EmployeeProfile } | { status: "missing" | "error" }

@@ -23,7 +23,7 @@ async function employeeContext(organizationId: string, profileId: string) {
     client.from("organization_memberships").select("created_at, role").eq("organization_id", organizationId).eq("profile_id", profileId).maybeSingle(),
   ])
   if (actor.error || target.error || !actor.data || !target.data) return null
-  return { client, actorId: data.user.id, canManage: actor.data.role === "org_admin", targetRole: target.data.role, joinedAt: target.data.created_at }
+  return { client, actorId: data.user.id, canManage: actor.data.role === "org_admin", canViewWork: actor.data.role === "org_admin" || actor.data.role === "team_lead", targetRole: target.data.role, joinedAt: target.data.created_at }
 }
 
 export async function getEmployeeProfile(organizationId: string, profileId: string): Promise<EmployeeProfileResult> {
@@ -36,9 +36,9 @@ export async function getEmployeeProfile(organizationId: string, profileId: stri
       client.from("profiles").select("job_title").eq("id", profileId).maybeSingle(),
       client.from("departments").select("id, name").eq("organization_id", organizationId).order("name"),
       client.from("department_memberships").select("department_id").eq("organization_id", organizationId).eq("profile_id", profileId),
-      getOrganizationProjects(organizationId),
-      getOrganizationTasks(organizationId, "everyone"),
-      client.from("project_members").select("project_id").eq("organization_id", organizationId).eq("profile_id", profileId),
+      context.canViewWork ? getOrganizationProjects(organizationId) : Promise.resolve({ status: "ready" as const, projects: [] }),
+      context.canViewWork ? getOrganizationTasks(organizationId, "everyone") : Promise.resolve({ status: "ready" as const, tasks: [] }),
+      context.canViewWork ? client.from("project_members").select("project_id").eq("organization_id", organizationId).eq("profile_id", profileId) : Promise.resolve({ data: [], error: null }),
     ])
     if (people.status !== "ready" || details.error || departments.error || memberships.error) return { status: "error" }
     const person = people.people.find(person => person.profileId === profileId)
@@ -55,6 +55,7 @@ export async function getEmployeeProfile(organizationId: string, profileId: stri
       projects: projects.status === "ready" ? projects.projects.filter(project => !project.archivedAt && (projectIds.has(project.id) || project.ownerId === profileId)) : [],
       tasks: assignedTasks, workUnavailable: projects.status !== "ready" || tasks.status !== "ready" || Boolean(projectMembers.error),
       canManage: context.canManage,
+      canViewWork: context.canViewWork,
       isSelf: context.actorId === profileId,
     } }
   } catch { return { status: "error" } }
