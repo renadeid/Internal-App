@@ -15,7 +15,7 @@ const MAX_MESSAGES = 20
 const MAX_CHARS = 4000
 const DEFAULT_CLAUDE_MODEL = "claude-sonnet-5-5"
 /** Tried in order; a busy or unavailable model falls through to the next. */
-const GEMINI_FALLBACK_MODELS = ["gemini-flash-lite-latest", "gemini-flash-latest", "gemini-2.5-flash-lite", "gemini-2.5-flash"]
+const GEMINI_FALLBACK_MODELS = ["gemini-flash-lite-latest", "gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-flash-latest", "gemini-3.6-flash"]
 
 class BusyError extends Error {}
 
