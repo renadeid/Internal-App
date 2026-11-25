@@ -367,6 +367,9 @@ export type Database = {
     Functions: {
       has_project_creation_permission: { Args: { target_organization: string }; Returns: boolean }
       set_project_creation_permission: { Args: { target_organization: string; target_profile: string; allow_creation: boolean }; Returns: undefined }
+      task_work_panel:{Args:{target_task:string};Returns:unknown}
+      task_submission_file:{Args:{target_submission:string};Returns:unknown}
+      review_task_submission:{Args:{target_submission:string;decision:string;feedback:string};Returns:undefined}
       create_asset_folder:{Args:{target_organization:string;folder_name:string;folder_project?:string|null};Returns:string}
       move_asset_to_folder:{Args:{target_asset:string;target_folder:string|null};Returns:undefined}
       shared_asset_upload_access: { Args: {target_organization:string}; Returns:unknown }

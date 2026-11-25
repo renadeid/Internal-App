@@ -1,4 +1,5 @@
 "use client"
+import {TaskWork} from "@/components/tasks/task-work-dialog"
 import { AssignedTaskStatus } from "@/components/tasks/assigned-task-status"
 
 import { useMemo, useState, useSyncExternalStore } from "react"
@@ -255,6 +256,7 @@ export function TaskRecord({
           ))}
         </div>
       </div>
+      <div className="mt-3"><TaskWork task={task}/></div>
       {showProject ? (
         <p className="mt-1 text-sm text-muted-foreground">
           {task.projectName ?? "Project unavailable"}
@@ -534,7 +536,7 @@ function TaskDraftDialog({
             <div className="grid gap-2">
               <Label id={`${fieldPrefix}-status-label`}>Status</Label>
               <Select
-                items={taskStatusValues.map((item) => ({
+                items={taskStatusValues.filter(item=>item==="todo"||item==="in_progress"||item===task?.status).map((item) => ({
                   value: item,
                   label: taskStatusLabel(item),
                 }))}
@@ -551,7 +553,7 @@ function TaskDraftDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {taskStatusValues.map((item) => (
+                  {taskStatusValues.filter(item=>item==="todo"||item==="in_progress"||item===task?.status).map((item) => (
                     <SelectItem key={item} value={item}>
                       {taskStatusLabel(item)}
                     </SelectItem>

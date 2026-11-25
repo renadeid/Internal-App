@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { Boxes, Images, Megaphone } from "lucide-react"
+import { Boxes, ChevronRight, Images, Megaphone } from "lucide-react"
 
 import type { AppRoute } from "@/lib/types"
 import { cn } from "@/lib/utils"
@@ -36,33 +36,34 @@ const shortcuts: {
 
 export function QuickAccess() {
   return (
-    <section>
-      <h2 className="mb-3 text-base font-semibold tracking-tight">Quick access</h2>
-      <div className="grid gap-4 md:grid-cols-3">
+    <section aria-labelledby="quick-access-heading">
+      <h2 id="quick-access-heading" className="mb-3 text-base font-semibold tracking-tight">Quick access</h2>
+      <div className="grid gap-3 md:grid-cols-3">
         {shortcuts.map((shortcut) => {
           const Icon = shortcut.icon
           return (
             <Link
               key={shortcut.href}
               href={shortcut.href}
-              className="flex gap-4 roaya-glass rounded-2xl border border-border bg-card p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-shadow hover:shadow-[0_8px_20px_rgba(15,23,42,0.06)] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+              className="group flex items-center gap-3 roaya-glass rounded-xl border border-border bg-card px-4 py-3 transition-colors hover:border-primary/30 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
             >
               <span
                 className={cn(
-                  "flex size-10 shrink-0 items-center justify-center rounded-lg",
+                  "flex size-9 shrink-0 items-center justify-center rounded-lg",
                   shortcut.iconClass
                 )}
               >
-                <Icon className="size-4" />
+                <Icon className="size-4" aria-hidden />
               </span>
               <span>
                 <span className="block text-sm font-semibold text-foreground">
                   {shortcut.title}
                 </span>
-                <span className="mt-1 block text-sm leading-5 text-muted-foreground">
+                <span className="sr-only">
                   {shortcut.description}
                 </span>
               </span>
+              <ChevronRight className="ms-auto size-4 shrink-0 text-muted-foreground transition-colors group-hover:text-primary" aria-hidden />
             </Link>
           )
         })}

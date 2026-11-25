@@ -236,7 +236,7 @@ function TaskStatusControl({
           </span>
         ) : null}
         <Select
-          items={taskStatusValues.map((item) => ({
+          items={taskStatusValues.filter(item=>item==="todo"||item==="in_progress"||item===task.status).map((item) => ({
             value: item,
             label: taskStatusLabel(item),
           }))}
@@ -248,13 +248,13 @@ function TaskStatusControl({
         >
           <SelectTrigger
             className="h-8 w-[9.5rem]"
-            disabled={pending}
+            disabled={pending||task.status==="in_review"}
             aria-label={`Status for ${task.title}`}
           >
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {taskStatusValues.map((item) => (
+            {taskStatusValues.filter(item=>item==="todo"||item==="in_progress"||item===task.status).map((item) => (
               <SelectItem key={item} value={item}>
                 {taskStatusLabel(item)}
               </SelectItem>
