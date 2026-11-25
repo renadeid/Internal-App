@@ -26,15 +26,12 @@ vi.mock("@/lib/supabase/server", () => ({ createClient: async () => ({
 
 beforeEach(() => { vi.clearAllMocks(); Object.assign(state, { role: "member", signedIn: true, allowed: true, targetBelongs: true, tables: [] }) })
 
-it.each(["member", "viewer", "admin"])("returns overview only for %s, without querying employee work", async role => {
+it.each(["member", "viewer", "admin"])("hides another employee's profile from %s without querying work", async role => {
   state.role = role
-  const result = await getEmployeeProfile("org", "employee")
-  expect(result.status).toBe("ready")
-  if (result.status !== "ready") throw new Error("Expected overview")
-  expect(result.profile).toMatchObject({ jobTitle: "Designer", canViewWork: false, projects: [], tasks: [], workUnavailable: false })
+  expect(await getEmployeeProfile("org", "employee")).toEqual({ status: "missing" })
   expect(getOrganizationProjects).not.toHaveBeenCalled()
   expect(getOrganizationTasks).not.toHaveBeenCalled()
-  expect(state.tables).not.toContain("project_members")
+  expect(state.tables.every(table => table === "organization_memberships")).toBe(true)
 })
 
 it.each(["org_admin", "team_lead"])("returns permitted employee work for %s", async role => {
@@ -67,10 +64,9 @@ it.each(["member", "viewer", "admin"])("allows %s to view their own work without
   expect(own.profile.projects.map(project => project.id)).toEqual(["own-project"])
   expect(own.profile.tasks.map(task => task.id)).toEqual(["own-task"])
   vi.clearAllMocks()
-  const other = await getEmployeeProfile("org", "employee")
-  expect(other.status).toBe("ready")
-  if (other.status !== "ready") throw new Error("Expected employee overview")
-  expect(other.profile).toMatchObject({ canViewWork: false, isSelf: false, projects: [], tasks: [] })
+  state.tables = []
+  expect(await getEmployeeProfile("org", "employee")).toEqual({ status: "missing" })
   expect(getOrganizationProjects).not.toHaveBeenCalled()
   expect(getOrganizationTasks).not.toHaveBeenCalled()
+  expect(state.tables.every(table => table === "organization_memberships")).toBe(true)
 })

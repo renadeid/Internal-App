@@ -41,6 +41,8 @@ export function AssetMark({
   return (
     <div className="relative flex aspect-[16/10] items-center justify-center overflow-hidden rounded-lg bg-muted">
       {showImage && imageUrl ? (
+        // Asset hosts are arbitrary https URLs and need a native load-error fallback.
+        // eslint-disable-next-line @next/next/no-img-element
         <img
           key={imageUrl}
           src={imageUrl}
