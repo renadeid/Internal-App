@@ -2,7 +2,7 @@
 
 Apply `supabase/migrations/20261125130000_project_creation_permissions.sql` before deploying the application change. Applied to the live application's `company-hub-test` database on 25 November 2026.
 
-Settings → Project creation permissions lets a Super admin or Team lead grant or revoke creation for individual Members in their workspace. The permission does not change their organization role. No initial grants are created. Admins and Viewers cannot use a stale Member grant. Role changes clear existing grants; removing organization membership cascades to its grant.
+Settings → Project creation permissions → Manage access lets a Super admin or Team lead grant or revoke creation for individual Members in their workspace. Search by name or email, filter by allowed/not allowed, and use pagination (six members by default). Members & roles uses the same paginated directory so neither list grows the whole Settings page. The permission does not change their organization role. No initial grants are created. Admins and Viewers cannot use a stale Member grant. Role changes clear existing grants; removing organization membership cascades to its grant.
 
 Super admins retain project creation. Team leads retain creation for departments they manage. Members need an explicit grant, including Members who manage a department. Delegated creation permits choosing the lead department, but does not grant access to existing projects. The existing project owner trigger gives the creator access to their new project.
 

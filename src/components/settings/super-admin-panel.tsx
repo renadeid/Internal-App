@@ -1,4 +1,5 @@
 "use client"
+import { MemberDirectory } from "./member-directory"
 import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Check, Copy, Eye, EyeOff, WandSparkles } from "lucide-react"
@@ -23,7 +24,6 @@ function OrganizationAdmin({ organizationId }: { organizationId: string }) {
  const [pending, setPending] = useState(false)
  const [loading, setLoading] = useState(true)
  const [operation, setOperation] = useState("create-user")
- const [search, setSearch] = useState("")
  const [email, setEmail] = useState("")
  const [emailCopyStatus, setEmailCopyStatus] = useState<"" | "copying" | "copied" | "error">("")
  const emailVersion = useRef(0)
@@ -138,11 +138,8 @@ function OrganizationAdmin({ organizationId }: { organizationId: string }) {
    </form>
 
    <div className="mt-2 grid gap-4">
-    <div className="flex flex-wrap items-center justify-between gap-4"><div><h3 className="font-semibold">Members & roles <span className="ms-2 text-sm font-normal text-muted-foreground">{snapshot.members.length}</span></h3><p className="mt-1 text-sm text-muted-foreground">Review your team and manage organization permissions.</p></div><Input className="h-10 w-full sm:w-64" type="search" aria-label="Search organization members" placeholder="Search name or email…" value={search} onChange={e => setSearch(e.target.value)} /></div>
-    <div className="divide-y divide-border overflow-hidden rounded-xl border border-border">
-     {snapshot.members.filter(m => (m.name + " " + m.email).toLowerCase().includes(search.trim().toLowerCase())).map(m => <div key={m.id} className="flex flex-wrap items-center justify-between gap-4 px-5 py-4"><div className="min-w-0"><p className="text-sm font-medium">{m.name}</p><p className="mt-1 break-all text-xs text-muted-foreground">{m.email}</p></div><label className="grid w-full gap-1.5 text-xs text-muted-foreground sm:w-48">Organization role<select aria-label={"Role for " + m.name} disabled={pending} className="h-10 w-full rounded-xl border bg-background px-3 text-sm text-foreground" value={m.role} onChange={e => { if (!pending) void run(() => setOrganizationRole(organizationId, m.id, e.target.value)) }}><option value="org_admin">Super admin</option><option value="admin">Admin</option><option value="team_lead">Owner (Team lead)</option><option value="member">Member</option><option value="viewer">Viewer</option></select></label></div>)}
-     {!snapshot.members.some(m => (m.name + " " + m.email).toLowerCase().includes(search.trim().toLowerCase())) ? <p className="p-6 text-center text-sm text-muted-foreground">{search ? "No members match your search." : "No organization members yet."}</p> : null}
-    </div>
+    <div><h3 className="font-semibold">Members & roles <span className="ms-2 text-sm font-normal text-muted-foreground">{snapshot.members.length}</span></h3><p className="mt-1 text-sm text-muted-foreground">Search your team and manage organization roles.</p></div>
+    <MemberDirectory members={snapshot.members} label="organization members" renderActions={m => <label className="grid gap-1 text-xs text-muted-foreground"><span className="sr-only">Organization role for {m.name}</span><select aria-label={"Role for " + m.name} disabled={pending} className="h-9 w-40 rounded-lg border border-border bg-background px-2 text-xs text-foreground" value={m.role} onChange={e => { if (!pending) void run(() => setOrganizationRole(organizationId, m.id, e.target.value)) }}><option value="org_admin">Super admin</option><option value="admin">Admin</option><option value="team_lead">Owner (Team lead)</option><option value="member">Member</option><option value="viewer">Viewer</option></select></label>} />
    </div>
   </> : null}
  </section>
