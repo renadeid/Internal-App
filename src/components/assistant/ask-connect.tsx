@@ -120,7 +120,9 @@ export function AskConnect({ firstName }: { firstName: string }) {
         const content =
           data.error === "not_configured"
             ? "Ask Connect is not switched on yet: an admin needs to add the AI key to the app's settings. Meanwhile, the Knowledge base (/knowledge) has step-by-step guides."
-            : data.error === "unauthorized"
+            : data.error === "busy"
+              ? "Ask Connect is very busy right now. Please try again in a minute."
+              : data.error === "unauthorized"
               ? "Your session has ended. Please sign in again."
               : "Sorry, I could not answer that just now. Please try again in a moment."
         setMessages((m) => [...m, { role: "assistant", content, error: true }])

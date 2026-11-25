@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server"
 /**
  * Ask Connect: answers questions about using Roaya Connect.
  * Server-only. Set ONE of these in Vercel → Settings → Environment Variables:
- *   GEMINI_API_KEY     Google Gemini (free key from aistudio.google.com). Optional GEMINI_MODEL.
+ *   GEMINI_API_KEY     Google Gemini (free key from aistudio.google.com). Optional GEMINI_MODEL (tried first; busy models fall back to others).
  *   ANTHROPIC_API_KEY  Anthropic Claude (console.anthropic.com). Optional ANTHROPIC_MODEL.
  * If both are set, Gemini is used.
  */
@@ -14,7 +14,10 @@ type ChatMessage = { role: "user" | "assistant"; content: string }
 const MAX_MESSAGES = 20
 const MAX_CHARS = 4000
 const DEFAULT_CLAUDE_MODEL = "claude-sonnet-5-5"
-const DEFAULT_GEMINI_MODEL = "gemini-flash-latest"
+/** Tried in order; a busy or unavailable model falls through to the next. */
+const GEMINI_FALLBACK_MODELS = ["gemini-flash-lite-latest", "gemini-flash-latest", "gemini-2.5-flash-lite", "gemini-2.5-flash"]
+
+class BusyError extends Error {}
 
 const APP_GUIDE = `Roaya Connect is Roaya's internal workspace. Its sections, all in the left sidebar:
 - Dashboard (/): summary cards, quick access, your open tasks, recent activity and projects.
@@ -102,36 +105,56 @@ export async function POST(request: Request) {
     if (!reply) return Response.json({ error: "upstream" }, { status: 502 })
     return Response.json({ reply })
   } catch (error) {
+    if (error instanceof BusyError) return Response.json({ error: "busy" }, { status: 503 })
     console.error("Ask Connect: model request error", error)
     return Response.json({ error: "upstream" }, { status: 502 })
   }
 }
 
 async function askGemini(apiKey: string, system: string, messages: ChatMessage[]) {
-  const model = process.env.GEMINI_MODEL || DEFAULT_GEMINI_MODEL
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
-    {
-      method: "POST",
-      headers: { "content-type": "application/json", "x-goog-api-key": apiKey },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: system }] },
-        contents: messages.map((m) => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] })),
-        generationConfig: { maxOutputTokens: 1024, temperature: 0.3 },
-      }),
-      signal: AbortSignal.timeout(30_000),
+  const preferred = process.env.GEMINI_MODEL?.trim()
+  const models = [...new Set([preferred, ...GEMINI_FALLBACK_MODELS].filter(Boolean) as string[])]
+  let busy = false
+  for (const [i, model] of models.entries()) {
+    if (i > 0) await new Promise((r) => setTimeout(r, 400))
+    let res: Response
+    try {
+      res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
+        {
+          method: "POST",
+          headers: { "content-type": "application/json", "x-goog-api-key": apiKey },
+          body: JSON.stringify({
+            systemInstruction: { parts: [{ text: system }] },
+            contents: messages.map((m) => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] })),
+            generationConfig: { maxOutputTokens: 1024, temperature: 0.3 },
+          }),
+          signal: AbortSignal.timeout(10_000),
+        }
+      )
+    } catch {
+      busy = true // timed out: try the next model
+      continue
     }
-  )
-  if (!res.ok) {
-    console.error("Ask Connect: Gemini request failed", res.status, (await res.text()).slice(0, 300))
-    return ""
+    if (res.status === 503 || res.status === 429 || res.status === 404 || res.status === 500) {
+      if (res.status !== 404) busy = true
+      console.warn("Ask Connect: Gemini model unavailable, trying next", model, res.status)
+      continue
+    }
+    if (!res.ok) {
+      console.error("Ask Connect: Gemini request failed", model, res.status, (await res.text()).slice(0, 300))
+      return ""
+    }
+    const data = (await res.json()) as { candidates?: { content?: { parts?: { text?: string; thought?: boolean }[] } }[] }
+    const text = (data.candidates?.[0]?.content?.parts ?? [])
+      .filter((p) => p.text && !p.thought)
+      .map((p) => p.text)
+      .join("")
+      .trim()
+    if (text) return text
   }
-  const data = (await res.json()) as { candidates?: { content?: { parts?: { text?: string; thought?: boolean }[] } }[] }
-  return (data.candidates?.[0]?.content?.parts ?? [])
-    .filter((p) => p.text && !p.thought)
-    .map((p) => p.text)
-    .join("")
-    .trim()
+  if (busy) throw new BusyError("All Gemini models are busy")
+  return ""
 }
 
 async function askClaude(apiKey: string, system: string, messages: ChatMessage[]) {
