@@ -1,4 +1,5 @@
 import { SuperAdminPanel } from "@/components/settings/super-admin-panel"
+import { ProjectCreationPermissions } from "@/components/settings/project-creation-permissions"
 import type { Metadata } from "next"
 import { redirect } from "next/navigation"
 import { connection } from "next/server"
@@ -25,6 +26,7 @@ export default async function SettingsPage() {
         description="Manage your profile and organization access."
       />
       <SuperAdminPanel />
+      <ProjectCreationPermissions />
       <div className="roaya-glass grid divide-y divide-border lg:grid-cols-2 lg:divide-x lg:divide-y-0">
         <section className="min-w-0 p-5 sm:p-7">
           <h2 className="text-sm font-semibold">Profile</h2>

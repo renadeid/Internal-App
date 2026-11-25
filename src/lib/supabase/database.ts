@@ -5,6 +5,12 @@
 export type Database = {
   public: {
     Tables: {
+      project_creation_grants: {
+        Row: { organization_id: string; profile_id: string; granted_by: string | null; created_at: string }
+        Insert: { organization_id: string; profile_id: string; granted_by?: string | null; created_at?: string }
+        Update: { organization_id?: string; profile_id?: string; granted_by?: string | null; created_at?: string }
+        Relationships: []
+      }
       asset_folders:{Row:{id:string;organization_id:string;name:string;visibility:"company"|"project_members";project_id:string|null;created_by:string|null;created_at:string};Insert:never;Update:never;Relationships:[]}
       activity_events: {Row:{id:string;organization_id:string;actor_id:string|null;verb:string;summary:string;project_id:string|null;campaign_id:string|null;task_id:string|null;deliverable_id:string|null;asset_id:string|null;created_at:string};Insert:never;Update:never;Relationships:[]}
       notifications: {Row:{id:string;organization_id:string;recipient_id:string;activity_event_id:string|null;title:string;read_at:string|null;created_at:string};Insert:never;Update:{read_at?:string|null};Relationships:[]}
@@ -359,6 +365,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      has_project_creation_permission: { Args: { target_organization: string }; Returns: boolean }
+      set_project_creation_permission: { Args: { target_organization: string; target_profile: string; allow_creation: boolean }; Returns: undefined }
       create_asset_folder:{Args:{target_organization:string;folder_name:string;folder_project?:string|null};Returns:string}
       move_asset_to_folder:{Args:{target_asset:string;target_folder:string|null};Returns:undefined}
       shared_asset_upload_access: { Args: {target_organization:string}; Returns:unknown }

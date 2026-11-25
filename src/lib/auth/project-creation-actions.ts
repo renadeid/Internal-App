@@ -70,17 +70,22 @@ export async function getProjectCreationAccess(
     }))
     .filter((department) => department.name.length > 0)
   const managedIds = new Set(managed.data.map((row) => row.department_id))
+  const delegated = membership.data.role === "member"
+    ? await supabase.client.rpc("has_project_creation_permission", { target_organization: organizationId })
+    : { data: false, error: null }
+  if (delegated.error) return { status: "error" }
   const selectable = selectableDepartments(
     membership.data.role,
     departmentOptions,
-    managedIds
+    managedIds,
+    delegated.data === true
   )
   if (!selectable) {
     return {
       status: "ready",
       canCreate: false,
       reason:
-        membership.data.role === "admin" ? "Admins can view and edit existing work, but cannot create projects." : "Only a Super admin or a manager of the lead department can create a project.",
+        membership.data.role === "admin" ? "Admins can view and edit existing work, but cannot create projects." : "Ask a Team lead or Super admin to enable Create project in Settings.",
     }
   }
   if (selectable.length === 0) {
@@ -250,9 +255,11 @@ export async function createOrganizationProject(
 function selectableDepartments(
   role: OrgRole,
   departments: ProjectDepartmentOption[],
-  managedIds: Set<string>
+  managedIds: Set<string>,
+  delegated: boolean
 ) {
   if (role === "org_admin") return departments
+  if (role === "member") return delegated ? departments : null
   if (role === "viewer" || role === "admin") return null
   const managed = departments.filter((department) => managedIds.has(department.id))
   return managed.length > 0 ? managed : null
@@ -267,6 +274,11 @@ async function canInsertProject(
 ) {
   if (role === "org_admin") return true
   if (role === "viewer" || role === "admin") return false
+  if (role === "member") {
+    const permission = await supabase.rpc("has_project_creation_permission", { target_organization: organizationId })
+    if (permission.error) return "error" as const
+    return permission.data === true
+  }
   const managed = await supabase
     .from("department_memberships")
     .select("department_id")
