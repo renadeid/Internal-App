@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState, useSyncExternalStore } from "react"
+import { useMemo, useState, useSyncExternalStore, type ReactNode } from "react"
 
 import Link from "next/link"
 import { Input } from "@/components/ui/input"
@@ -69,14 +69,16 @@ function PeopleList({
     return <PeopleMessage message={`${organizationName} has no members.`} />
   }
 
+  const role=snapshot.people.find(person=>person.profileId===snapshot.currentUserId)?.role
+  const canInspectOthers=role==="org_admin"||role==="team_lead"
   return (
-    <div className="grid gap-5"><div className="flex flex-wrap items-center justify-between gap-3"><p className="text-sm text-muted-foreground">{snapshot.people.length} employees · Select a person to open their profile.</p><Input type="search" className="h-11 w-full sm:w-80" aria-label="Search employees" placeholder="Search name or email…" value={search} onChange={e=>setSearch(e.target.value)} /></div><ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+    <div className="grid gap-5"><div className="flex flex-wrap items-center justify-between gap-3"><p className="text-sm text-muted-foreground">{snapshot.people.length} employees · {canInspectOthers?"Select a person to open their profile.":"You can open your own profile. Employee work details are private."}</p><Input type="search" className="h-11 w-full sm:w-80" aria-label="Search employees" placeholder="Search name or email…" value={search} onChange={e=>setSearch(e.target.value)} /></div><ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
       {snapshot.people.filter(person => (person.name + " " + person.email).toLowerCase().includes(search.trim().toLowerCase())).map((person) => (
         <li
           key={person.profileId}
           className="roaya-glass rounded-2xl border border-border bg-card shadow-[0_1px_2px_rgba(15,23,42,0.04)]"
         >
-          <Link href={"/people/" + person.profileId} className="block h-full rounded-2xl p-5 transition-colors hover:bg-muted/50 focus-visible:outline-2 focus-visible:outline-ring">
+          <EmployeeCardLink profileId={person.profileId} canView={canInspectOthers||person.profileId===snapshot.currentUserId}>
           <div className="flex items-center gap-3">
             <Avatar>
               {person.avatarUrl ? <AvatarImage src={person.avatarUrl} alt={person.name} /> : null}
@@ -99,12 +101,14 @@ function PeopleList({
               </p>
             </div>
           </div>
-          <p className="mt-4 break-all text-xs text-muted-foreground">{person.email}</p><p className="mt-4 text-xs font-medium text-primary">View employee profile</p></Link>
+          <p className="mt-4 break-all text-xs text-muted-foreground">{person.email}</p>{canInspectOthers||person.profileId===snapshot.currentUserId?<p className="mt-4 text-xs font-medium text-primary">{person.profileId===snapshot.currentUserId?"View your profile":"View employee profile"}</p>:null}</EmployeeCardLink>
         </li>
       ))}
     </ul>{!snapshot.people.some(person => (person.name + " " + person.email).toLowerCase().includes(search.trim().toLowerCase())) ? <p className="py-6 text-sm text-muted-foreground">No employees match your search.</p> : null}</div>
   )
 }
+
+function EmployeeCardLink({profileId,canView,children}:{profileId:string;canView:boolean;children:ReactNode}){return canView?<Link href={"/people/"+profileId} className="block h-full rounded-2xl p-5 transition-colors hover:bg-muted/50 focus-visible:outline-2 focus-visible:outline-ring">{children}</Link>:<div className="h-full p-5">{children}</div>}
 
 function PeopleMessage({ message }: { message: string }) {
   return (

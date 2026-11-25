@@ -23,13 +23,14 @@ async function employeeContext(organizationId: string, profileId: string) {
     client.from("organization_memberships").select("created_at, role").eq("organization_id", organizationId).eq("profile_id", profileId).maybeSingle(),
   ])
   if (actor.error || target.error || !actor.data || !target.data) return null
-  return { client, actorId: data.user.id, canManage: actor.data.role === "org_admin", canViewWork: data.user.id === profileId || actor.data.role === "org_admin" || actor.data.role === "team_lead", targetRole: target.data.role, joinedAt: target.data.created_at }
+  const canSee = data.user.id === profileId || actor.data.role === "org_admin" || actor.data.role === "team_lead"
+  return { client, actorId: data.user.id, canManage: actor.data.role === "org_admin", canViewDetails: canSee, canViewWork: canSee, targetRole: target.data.role, joinedAt: target.data.created_at }
 }
 
 export async function getEmployeeProfile(organizationId: string, profileId: string): Promise<EmployeeProfileResult> {
   try {
     const context = await employeeContext(organizationId, profileId)
-    if (!context) return { status: "missing" }
+    if (!context?.canViewDetails) return { status: "missing" }
     const { client } = context
     const [people, details, departments, memberships, projects, tasks, projectMembers] = await Promise.all([
       getOrganizationPeople(organizationId),
