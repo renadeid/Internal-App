@@ -1,0 +1,9 @@
+"use client"
+import Markdown from "react-markdown"
+import remarkGfm from "remark-gfm"
+
+export function MarkdownDocument({content}:{content:string}){
+ return <article className="min-w-0 text-sm leading-7 text-foreground [overflow-wrap:anywhere] [&_h1]:mb-6 [&_h1]:mt-3 [&_h1]:text-3xl [&_h1]:font-bold [&_h1]:tracking-tight [&_h2]:mb-3 [&_h2]:mt-9 [&_h2]:border-b [&_h2]:border-border [&_h2]:pb-2 [&_h2]:text-xl [&_h2]:font-semibold [&_h3]:mb-2 [&_h3]:mt-6 [&_h3]:text-lg [&_h3]:font-semibold [&_h4]:mt-5 [&_h4]:font-semibold [&_p]:my-4 [&_ul]:my-4 [&_ul]:list-disc [&_ul]:ps-6 [&_ol]:my-4 [&_ol]:list-decimal [&_ol]:ps-6 [&_li]:my-1 [&_blockquote]:my-5 [&_blockquote]:border-s-4 [&_blockquote]:border-primary/40 [&_blockquote]:ps-4 [&_blockquote]:text-muted-foreground [&_pre]:my-5 [&_pre]:overflow-x-auto [&_pre]:rounded-xl [&_pre]:bg-muted [&_pre]:p-4 [&_pre]:text-xs [&_code]:rounded [&_code]:bg-muted [&_code]:px-1 [&_code]:font-mono [&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_hr]:my-8 [&_hr]:border-border [&_input]:me-2 [&_a]:text-primary [&_a]:underline [&_a]:underline-offset-4">
+  <Markdown remarkPlugins={[remarkGfm]} skipHtml components={{table:({children})=><div className="my-5 overflow-x-auto rounded-xl border border-border"><table className="w-full border-collapse text-start text-sm">{children}</table></div>,th:({children})=><th className="border-b border-border bg-muted px-4 py-2 text-start font-semibold">{children}</th>,td:({children})=><td className="border-b border-border px-4 py-2 align-top">{children}</td>,a:({href,children})=><a href={href} target="_blank" rel="noopener noreferrer">{children}</a>,img:({src,alt})=>typeof src==="string"?<a href={src} target="_blank" rel="noopener noreferrer">Open image: {alt||"Linked image"}</a>:<span>{alt}</span>}}>{content}</Markdown>
+ </article>
+}
