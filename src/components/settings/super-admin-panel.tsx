@@ -2,11 +2,12 @@
 import { MemberDirectory } from "./member-directory"
 import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Check, Copy, Eye, EyeOff, WandSparkles } from "lucide-react"
+import { Check, Copy, Eye, EyeOff, WandSparkles, UsersRound } from "lucide-react"
 import { generatePassword } from "@/lib/generate-password"
 import { useOrganization } from "@/components/auth/organization-provider"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { addDepartmentMember, createDepartment, createOrganizationUser, getAdminSnapshot, setOrganizationRole } from "@/lib/auth/super-admin-actions"
 import { refreshProjectInvitations, useProjectInvitations } from "@/components/projects/project-invitations"
 import { refreshOrganizationProjects } from "@/lib/auth/project-list-refresh"
@@ -22,6 +23,7 @@ function OrganizationAdmin({ organizationId }: { organizationId: string }) {
  const [snapshot, setSnapshot] = useState<AdminSnapshot | null>(null)
  const [message, setMessage] = useState("")
  const [pending, setPending] = useState(false)
+ const [membersOpen, setMembersOpen] = useState(false)
  const [loading, setLoading] = useState(true)
  const [operation, setOperation] = useState("create-user")
  const [email, setEmail] = useState("")
@@ -137,10 +139,18 @@ function OrganizationAdmin({ organizationId }: { organizationId: string }) {
     </div>
    </form>
 
-   <div className="mt-2 grid gap-4">
-    <div><h3 className="font-semibold">Members & roles <span className="ms-2 text-sm font-normal text-muted-foreground">{snapshot.members.length}</span></h3><p className="mt-1 text-sm text-muted-foreground">Search your team and manage organization roles.</p></div>
-    <MemberDirectory members={snapshot.members} label="organization members" renderActions={m => <label className="grid gap-1 text-xs text-muted-foreground"><span className="sr-only">Organization role for {m.name}</span><select aria-label={"Role for " + m.name} disabled={pending} className="h-9 w-40 rounded-lg border border-border bg-background px-2 text-xs text-foreground" value={m.role} onChange={e => { if (!pending) void run(() => setOrganizationRole(organizationId, m.id, e.target.value)) }}><option value="org_admin">Super admin</option><option value="admin">Admin</option><option value="team_lead">Owner (Team lead)</option><option value="member">Member</option><option value="viewer">Viewer</option></select></label>} />
+   <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-border bg-background/60 p-5">
+    <div className="flex min-w-0 items-start gap-3"><span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-secondary text-secondary-foreground"><UsersRound className="size-5" aria-hidden /></span><div><h3 className="font-semibold">Members & roles</h3><p className="mt-1 text-sm text-muted-foreground">{snapshot.members.length} members in your workspace</p><p className="mt-1 text-xs text-muted-foreground">Find a teammate and manage their organization role.</p></div></div>
+    <Button variant="outline" className="gap-2" onClick={() => setMembersOpen(true)}><UsersRound className="size-4" aria-hidden />Manage members</Button>
    </div>
+   <Dialog open={membersOpen} onOpenChange={value => { if (!pending) setMembersOpen(value) }}>
+    <DialogContent showCloseButton={!pending} className="max-h-[90svh] overflow-y-auto sm:max-w-2xl">
+     <DialogHeader><DialogTitle>Members & roles</DialogTitle><DialogDescription>Search your team and manage organization roles. Only a Super admin can change roles.</DialogDescription></DialogHeader>
+     {message ? <p role="status" className="rounded-lg bg-muted px-3 py-2 text-sm">{message}</p> : null}
+     <MemberDirectory members={snapshot.members} label="organization members" renderActions={m => <label className="grid gap-1 text-xs text-muted-foreground"><span className="sr-only">Organization role for {m.name}</span><select aria-label={"Role for " + m.name} disabled={pending} className="h-9 w-40 rounded-lg border border-border bg-background px-2 text-xs text-foreground" value={m.role} onChange={e => { if (!pending) void run(() => setOrganizationRole(organizationId, m.id, e.target.value)) }}><option value="org_admin">Super admin</option><option value="admin">Admin</option><option value="team_lead">Owner (Team lead)</option><option value="member">Member</option><option value="viewer">Viewer</option></select></label>} />
+     <div className="flex justify-end"><Button variant="outline" disabled={pending} onClick={() => setMembersOpen(false)}>Done</Button></div>
+    </DialogContent>
+   </Dialog>
   </> : null}
  </section>
 }
