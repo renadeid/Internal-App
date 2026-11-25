@@ -1,12 +1,12 @@
 "use client"
 
 import { useMemo, useRef, useState, useSyncExternalStore } from "react"
-import Link from "next/link"
+import { Plus, RefreshCw } from "lucide-react"
+import { CampaignCollection } from "./campaign-collection"
 
 import { useCurrentIdentity } from "@/components/auth/current-identity-provider"
 import { useOrganization } from "@/components/auth/organization-provider"
 import { PageIntro } from "@/components/shared/page-intro"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -50,8 +50,7 @@ import {
   type OrganizationCampaign,
   type OrganizationCampaignsResult,
 } from "@/lib/auth/organization-campaigns"
-import { dateRange } from "@/lib/dates"
-import { campaignStatusClass, surfaceClass } from "@/lib/presentation"
+import { surfaceClass } from "@/lib/presentation"
 
 type CampaignsSnapshot = {
   status: "loading" | OrganizationCampaignsResult["status"]
@@ -62,7 +61,7 @@ export function OrganizationCampaignsView() {
   const identity = useCurrentIdentity()
   const { activeOrganization, mode } = useOrganization()
   const description = activeOrganization
-    ? `Campaigns you can read in ${activeOrganization.name}.`
+    ? `Plan campaigns, coordinate launches and track delivery in ${activeOrganization.name}.`
     : mode === "multiple"
       ? "Select an organization in the sidebar to see its campaigns."
       : mode === "unavailable"
@@ -71,7 +70,7 @@ export function OrganizationCampaignsView() {
 
   return (
     <div className="flex flex-col gap-8">
-      <PageIntro title="Marketing" description={description} />
+      <PageIntro title="Marketing workspace" description={description} />
       {activeOrganization ? (
         <CampaignList
           key={`${identity.profileId}:${activeOrganization.id}`}
@@ -123,17 +122,6 @@ function CampaignList({
   const accessState = useCampaignAccess(userId, organizationId, projectId)
   const access = accessState.snapshot
   const creatable = isCreatableAccess(access) ? access : null
-  const archivedCount =
-    snapshot.status === "ready"
-      ? snapshot.campaigns.filter((campaign) => campaign.archivedAt).length
-      : 0
-  const visible =
-    snapshot.status === "ready"
-      ? showArchived
-        ? snapshot.campaigns
-        : snapshot.campaigns.filter((campaign) => !campaign.archivedAt)
-      : []
-
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -142,10 +130,11 @@ function CampaignList({
           <p className="mt-1 text-sm text-muted-foreground">
             {projectId
               ? "Campaigns saved for this project."
-              : `Active campaigns visible in ${organizationName}.`}
+              : `Campaign briefs, owners and timelines in ${organizationName}.`}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Button type="button" variant="outline" size="icon" aria-label="Refresh campaigns" onClick={() => { refreshOrganizationCampaigns(); accessState.reload() }}><RefreshCw className="size-4" aria-hidden /></Button>
           {snapshot.status === "ready" ? (
             <Button
               type="button"
@@ -158,7 +147,7 @@ function CampaignList({
           ) : null}
           {creatable ? (
             <Button type="button" onClick={() => setCreateOpen(true)}>
-              Create campaign
+              <Plus className="size-4" aria-hidden />Create campaign
             </Button>
           ) : null}
         </div>
@@ -181,14 +170,10 @@ function CampaignList({
         />
       ) : null}
       {snapshot.status === "loading" ? (
-        <p className="text-sm text-muted-foreground" aria-live="polite">
-          Loading campaigns…
-        </p>
+        <div role="status" aria-label="Loading campaigns" className="grid gap-5"><div className="grid grid-cols-2 gap-4 lg:grid-cols-4">{[0,1,2,3].map(item => <div key={item} className="h-36 rounded-2xl bg-muted motion-safe:animate-pulse" />)}</div><div className="h-64 rounded-2xl bg-muted motion-safe:animate-pulse" /><span className="sr-only">Loading campaigns…</span></div>
       ) : null}
       {snapshot.status === "error" ? (
-        <p className="text-sm text-muted-foreground" aria-live="polite">
-          Campaigns could not be loaded.
-        </p>
+        <div className="roaya-glass grid justify-items-start gap-3 rounded-2xl p-6" role="status"><h3 className="font-semibold">Campaigns could not be loaded</h3><p className="text-sm text-muted-foreground">Check your connection and try again.</p><Button variant="outline" onClick={refreshOrganizationCampaigns}>Retry</Button></div>
       ) : null}
       {snapshot.status === "rejected" ? (
         <p className="text-sm text-muted-foreground" aria-live="polite">
@@ -200,69 +185,10 @@ function CampaignList({
           This project is not available.
         </p>
       ) : null}
-      {snapshot.status === "ready" && visible.length === 0 ? (
-        <p className="text-sm text-muted-foreground" aria-live="polite">
-          {archivedCount > 0 && !showArchived
-            ? "No active campaigns are visible. Show archived campaigns to see them."
-            : projectId
-              ? "No active campaigns are visible for this project."
-              : `No active campaigns are visible in ${organizationName}.`}
-        </p>
-      ) : null}
-      {snapshot.status === "ready" && visible.length > 0 ? (
-        <ul className="border-t border-border">
-          {visible.map((campaign) => (
-            <CampaignSummary key={campaign.id} campaign={campaign} showProject={!projectId} />
-          ))}
-        </ul>
+      {snapshot.status === "ready" ? (
+        <CampaignCollection campaigns={snapshot.campaigns} showProject={!projectId} showArchived={showArchived} canCreate={Boolean(creatable)} onCreate={() => setCreateOpen(true)} />
       ) : null}
     </div>
-  )
-}
-
-function CampaignSummary({
-  campaign,
-  showProject,
-}: {
-  campaign: OrganizationCampaign
-  showProject: boolean
-}) {
-  const status = campaignStatusLabel(campaign.status)
-
-  return (
-    <li className="border-b border-border py-3.5 last:border-b-0">
-      <div className="flex flex-wrap items-center gap-2">
-        <Badge variant="secondary" className={campaignStatusClass[status]}>
-          {status}
-        </Badge>
-        <Badge variant="secondary">{campaignTypeLabel(campaign.type)}</Badge>
-        {campaign.archivedAt ? <Badge variant="secondary">Archived</Badge> : null}
-      </div>
-      <h3 className="mt-2 font-medium text-foreground">
-        <Link
-          href={`/workspaces/marketing/campaigns/${campaign.id}`}
-          className="rounded-sm hover:underline focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
-        >
-          {campaign.name}
-        </Link>
-      </h3>
-      <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
-        {campaign.description || "No description yet."}
-      </p>
-      <p className="mt-1 text-sm text-muted-foreground">
-        {campaign.ownerName ?? "Owner unavailable"}
-        {showProject ? (
-          <>
-            {" · "}
-            <Link href={`/projects/${campaign.projectId}`} className="hover:underline">
-              {campaign.projectName ?? "Project unavailable"}
-            </Link>
-          </>
-        ) : null}
-        {" · "}
-        {dateRange(campaign.startsOn, campaign.endsOn)}
-      </p>
-    </li>
   )
 }
 
