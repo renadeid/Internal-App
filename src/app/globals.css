@@ -131,3 +131,22 @@
     @apply font-sans;
   }
 }
+
+/* Onboarding spotlight tour and Ask Connect assistant */
+.roaya-tour-spot {
+  box-shadow: 0 0 0 9999px rgb(11 18 32 / 0.62);
+  transition: top 0.45s cubic-bezier(0.16, 1, 0.3, 1), left 0.45s cubic-bezier(0.16, 1, 0.3, 1), width 0.45s cubic-bezier(0.16, 1, 0.3, 1), height 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: roaya-tour-pulse 2.4s ease-in-out infinite;
+}
+.roaya-tour-card { transition: top 0.45s cubic-bezier(0.16, 1, 0.3, 1), left 0.45s cubic-bezier(0.16, 1, 0.3, 1); animation: roaya-tour-pop 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+.roaya-tour-pop { animation: roaya-tour-pop 0.45s cubic-bezier(0.16, 1, 0.3, 1); }
+.roaya-assistant-panel { animation: roaya-assistant-in 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+@keyframes roaya-tour-pulse {
+  0%, 100% { box-shadow: 0 0 0 9999px rgb(11 18 32 / 0.62), 0 0 0 0 rgb(93 183 194 / 0.55); }
+  50% { box-shadow: 0 0 0 9999px rgb(11 18 32 / 0.62), 0 0 0 10px rgb(93 183 194 / 0); }
+}
+@keyframes roaya-tour-pop { from { opacity: 0; transform: translateY(8px) scale(0.98); } to { opacity: 1; transform: none; } }
+@keyframes roaya-assistant-in { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .roaya-tour-spot, .roaya-tour-card, .roaya-tour-pop, .roaya-assistant-panel { animation: none; transition: none; }
+}

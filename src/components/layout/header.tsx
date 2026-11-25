@@ -41,12 +41,13 @@ export function Header({
         </Button>
         <Button type="button" variant="outline" size="icon" className="hidden lg:inline-flex" aria-label={sidebarCollapsed?"Expand sidebar":"Collapse sidebar"} aria-expanded={!sidebarCollapsed} onClick={onToggleSidebar}>{sidebarCollapsed?<PanelLeftOpen/>:<PanelLeftClose/>}</Button>
         <HeaderBreadcrumbs />
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1" data-tour="search">
           <SearchField />
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
           <Button
             type="button"
+            data-tour="create"
             disabled={!canCreate}
             aria-label={canCreate ? "Quick create" : createLabel}
             title={createLabel}
@@ -55,7 +56,9 @@ export function Header({
             <Plus />
             <span className="hidden sm:inline">Quick create</span>
           </Button>
-          <NotificationsMenu />
+          <span data-tour="notifications" className="inline-flex">
+            <NotificationsMenu />
+          </span>
           <UserMenu identity={identity} />
         </div>
       </div>

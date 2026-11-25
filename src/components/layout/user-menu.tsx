@@ -3,6 +3,8 @@
 import Link from "next/link"
 import { useTransition } from "react"
 
+import { OPEN_ASSISTANT_EVENT } from "@/components/assistant/ask-connect"
+import { START_TOUR_EVENT } from "@/components/onboarding/spotlight-tour"
 import { signOut } from "@/lib/auth/sign-out"
 import type { UserIdentity } from "@/lib/auth/user-identity"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -60,6 +62,13 @@ export function UserMenu({ identity }: { identity: UserIdentity }) {
         </DropdownMenuItem>
         <DropdownMenuItem render={<Link href="/settings" />}>
           Settings
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => window.dispatchEvent(new Event(START_TOUR_EVENT))}>
+          Replay welcome tour
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => window.dispatchEvent(new Event(OPEN_ASSISTANT_EVENT))}>
+          Ask Connect
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem

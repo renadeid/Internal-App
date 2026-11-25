@@ -57,7 +57,7 @@ export function SidebarPanel({
         </div>
       </div>
 
-      <nav aria-label="Primary" className="flex-1 overflow-y-auto px-3 pb-3">
+      <nav aria-label="Primary" data-tour="sidebar" className="flex-1 overflow-y-auto px-3 pb-3">
         <NavGroup items={mainNav} collapsed={collapsed} onNavigate={onNavigate} />
         <p
           className={cn(
@@ -165,6 +165,7 @@ function NavGroup({
         const link = (
           <Link
             href={item.href}
+            data-tour={"nav" + item.href.replaceAll("/", "-")}
             aria-current={active ? "page" : undefined}
             onClick={onNavigate}
             className={cn(

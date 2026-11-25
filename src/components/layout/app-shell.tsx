@@ -12,6 +12,8 @@ import {
   useProjectCreationAccess,
 } from "@/components/projects/project-creation-access"
 import { Sidebar, SidebarPanel } from "@/components/layout/sidebar"
+import { AskConnect } from "@/components/assistant/ask-connect"
+import { SpotlightTour } from "@/components/onboarding/spotlight-tour"
 import type { UserIdentity } from "@/lib/auth/user-identity"
 import {
   Sheet,
@@ -84,6 +86,8 @@ export function AppShell({
           access={creation}
         />
       ) : null}
+      <SpotlightTour userKey={identity.email || identity.name} firstName={identity.name.split(" ")[0]} />
+      <AskConnect firstName={identity.name.split(" ")[0]} />
     </div>
     </ProjectInvitationsProvider></LiveWorkspaceProvider>
   )
