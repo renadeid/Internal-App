@@ -17,6 +17,7 @@ begin
  other:=public.send_department_request(org,jsonb_build_object('departmentId','11110000-0000-4000-8000-000000000002','title','Other dept test','brief','Expected result','priority','medium'));
  perform set_config('request.jwt.claim.sub','25d84194-b1f5-4524-aabb-13d04258b4f9',true);
  if not exists(select 1 from jsonb_array_elements(public.department_request_library(org)->'requests')x where x->>'id'=mine::text and (x->>'canManage')::boolean) then raise exception 'Department lead inbox failed';end if;
+ if not exists(select 1 from public.notifications where department_request_id=mine) or exists(select 1 from public.notifications where department_request_id=other) then raise exception 'Department notification scope failed';end if;
  if exists(select 1 from jsonb_array_elements(public.department_request_library(org)->'requests')x where x->>'id'=other::text) then raise exception 'Lead read another department';end if;
  begin perform public.decide_department_request(other,'declined','No');raise exception 'Lead managed another department';exception when insufficient_privilege then null;end;
  task:=public.decide_department_request(mine,'accepted','Assigned by department lead','f4ac873d-a892-40b8-bf65-07395524e759','f40a3a0b-cf06-4a65-b6c8-b55c0e695618');

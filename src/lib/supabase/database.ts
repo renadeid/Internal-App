@@ -25,7 +25,7 @@ export type Database = {
       }
       asset_folders:{Row:{id:string;organization_id:string;name:string;visibility:"company"|"project_members";project_id:string|null;created_by:string|null;created_at:string};Insert:never;Update:never;Relationships:[]}
       activity_events: {Row:{id:string;organization_id:string;actor_id:string|null;verb:string;summary:string;project_id:string|null;campaign_id:string|null;task_id:string|null;deliverable_id:string|null;asset_id:string|null;created_at:string};Insert:never;Update:never;Relationships:[]}
-      notifications: {Row:{id:string;organization_id:string;recipient_id:string;activity_event_id:string|null;title:string;read_at:string|null;created_at:string};Insert:never;Update:{read_at?:string|null};Relationships:[]}
+      notifications: {Row:{id:string;organization_id:string;recipient_id:string;activity_event_id:string|null;department_request_id:string|null;task_id:string|null;event_key:string|null;title:string;read_at:string|null;created_at:string};Insert:never;Update:{read_at?:string|null};Relationships:[]}
 
       project_invitations: {
         Row: { id: string; organization_id: string; project_id: string; profile_id: string; created_at: string; history_access: "full_history" | "assigned_only"; can_update_assigned_status: boolean; task_ids: string[] }

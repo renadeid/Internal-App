@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
+import { useRouter, useSearchParams } from "next/navigation"
 import { ArrowDownLeft, ArrowUpRight, Download, ExternalLink, Plus, Search, RefreshCw } from "lucide-react"
 import { useOrganization } from "@/components/auth/organization-provider"
 import { Button, buttonVariants } from "@/components/ui/button"
@@ -20,15 +21,19 @@ type ProjectOption={id:string;name:string;assignees:{id:string;name:string}[]}
 
 export function DepartmentRequestsWorkspace(){
  const {activeOrganization}=useOrganization(),org=activeOrganization?.id
- const [snapshot,setSnapshot]=useState<{org:string;library:RequestLibrary}|null>(null)
+ const [snapshot,setSnapshot]=useState<{org:string;query:string|null;library:RequestLibrary}|null>(null)
  const [error,setError]=useState(""),[notice,setNotice]=useState(""),[loading,setLoading]=useState(false),[generation,setGeneration]=useState(0)
  const [tab,setTab]=useState<"sent"|"inbox">("sent"),[search,setSearch]=useState(""),[department,setDepartment]=useState("all"),[status,setStatus]=useState("all"),[page,setPage]=useState(1)
- const [creating,setCreating]=useState(false),[selected,setSelected]=useState<string|null>(null)
- const library=snapshot && snapshot.org===org?snapshot.library:null
+ const requestedId=useSearchParams().get("request"),router=useRouter()
+ const [selection,setSelection]=useState<{query:string|null;id:string|null}|null>(null)
+ const selected=selection?.query===requestedId?selection.id:requestedId
+ function setSelected(id:string|null){setSelection({query:requestedId,id});if(id===null&&requestedId)router.replace("/requests",{scroll:false})}
+ const [creating,setCreating]=useState(false)
+ const library=snapshot && snapshot.org===org && snapshot.query===requestedId?snapshot.library:null
  useEffect(()=>{if(!org)return;let active=true
-  getDepartmentRequests(org).then(result=>{if(!active)return;setLoading(false);if(result.ok){setSnapshot({org,library:result.library});setError("")}else setError(result.message)}).catch(()=>{if(active){setLoading(false);setError("Requests could not be loaded. Retry to reconnect.")}})
+  getDepartmentRequests(org).then(result=>{if(!active)return;setLoading(false);if(result.ok){setSnapshot({org,query:requestedId,library:result.library});setError("")}else setError(result.message)}).catch(()=>{if(active){setLoading(false);setError("Requests could not be loaded. Retry to reconnect.")}})
   return()=>{active=false}
- },[org,generation])
+ },[org,generation,requestedId])
  const filtered=useMemo(()=>library?.requests.filter(r=>(tab==="sent"?r.isMine:r.canManage)&&(department==="all"||r.departmentId===department)&&(status==="all"||(status==="open"?(r.status==="submitted"||(r.status==="accepted"&&r.taskStatus!=="done")):status==="completed"?r.taskStatus==="done":r.status===status))&&[r.title,r.brief,r.departmentName,r.requesterName].join(" ").toLowerCase().includes(search.trim().toLowerCase()))??[],[library,tab,department,status,search])
  const pages=Math.max(1,Math.ceil(filtered.length/6)),currentPage=Math.min(page,pages),visible=filtered.slice((currentPage-1)*6,currentPage*6)
  const request=library?.requests.find(r=>r.id===selected)
@@ -38,6 +43,7 @@ export function DepartmentRequestsWorkspace(){
   <header className="flex flex-wrap items-start justify-between gap-4"><div><h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Department requests</h1><p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">Send a clear brief to another team. Follow it from triage to an approved delivery.</p></div><div className="flex gap-2"><Button variant="outline" disabled={!org||loading} onClick={()=>reload()} aria-label="Refresh requests"><RefreshCw className={"size-4 "+(loading?"animate-spin":"")}/></Button>{library?.canCreate?<Button onClick={()=>setCreating(true)}><Plus className="size-4"/>New request</Button>:null}</div></header>
   {!org?<p role="status">Select an organization to view requests.</p>:null}
   {error?<div role="alert" className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm"><p>{error}</p><Button variant="outline" className="mt-3" onClick={()=>reload()}>Retry</Button></div>:null}
+  {requestedId&&selected&&library&&!library.requests.some(r=>r.id===selected)?<p role="status" className="rounded-xl bg-muted p-4 text-sm">This request is no longer available for your account in this organization.</p>:null}
   {notice?<p role="status" className="rounded-xl bg-primary/10 p-4 text-sm">{notice}</p>:null}
   {org&&!library&&!error?<p role="status">Loading department requests…</p>:null}
   {library?<>
