@@ -58,3 +58,11 @@ export async function getRequestProjects(org:string,departmentId:string){
   return {ok:true as const,projects:options.filter((p):p is NonNullable<typeof p>=>Boolean(p))}
  }catch(error){return failure(error)}
 }
+
+export async function setDepartmentRequestArchived(org:string,id:string,archived:boolean){
+ try{if(!uuid(id)||typeof archived!=="boolean")throw Error("Reopen this request and try again.")
+ const client=await context(org),result=await client.rpc("set_department_request_archived",{target_organization:org,target_request:id,archived})
+ if(result.error)throw Error("Request could not be updated. Refresh and check your department permissions.")
+ return {ok:true as const}
+ }catch(error){return failure(error)}
+}

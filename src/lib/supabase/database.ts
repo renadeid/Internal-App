@@ -383,6 +383,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      set_department_request_archived:{Args:{target_organization:string;target_request:string;archived:boolean};Returns:undefined}
       notification_task_targets: {Args:{target_organization:string};Returns:{notification_id:string;task_id:string}[]}
       department_request_library: { Args: { target_organization: string }; Returns: unknown }
       send_department_request: { Args: { target_organization: string; payload: Record<string,unknown> }; Returns: string }

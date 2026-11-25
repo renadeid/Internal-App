@@ -2,7 +2,7 @@ import type { TaskPriorityValue, TaskStatusValue } from "@/lib/auth/organization
 
 export type DepartmentRequestDraft = { title:string; brief:string; departmentId:string; referenceUrl:string; priority:TaskPriorityValue; dueOn:string }
 export type DepartmentRequest = {
- id:string; title:string; brief:string; referenceUrl:string|null; departmentId:string; departmentName:string;
+ id:string; archivedAt:string|null; title:string; brief:string; referenceUrl:string|null; departmentId:string; departmentName:string;
  isMine:boolean; requesterName:string; priority:TaskPriorityValue; dueOn:string|null;
  status:"submitted"|"accepted"|"declined"|"cancelled"; decisionNote:string; reviewerName:string|null; reviewedAt:string|null; createdAt:string;
  canManage:boolean; taskId:string|null; taskStatus:TaskStatusValue|null; taskArchived:boolean; assigneeName:string|null;
