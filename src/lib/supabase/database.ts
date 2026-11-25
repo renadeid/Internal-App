@@ -383,6 +383,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      notification_task_targets: {Args:{target_organization:string};Returns:{notification_id:string;task_id:string}[]}
       department_request_library: { Args: { target_organization: string }; Returns: unknown }
       send_department_request: { Args: { target_organization: string; payload: Record<string,unknown> }; Returns: string }
       decide_department_request: { Args: { target_request: string; decision: string; feedback?: string; target_project?: string|null; target_assignee?: string|null }; Returns: string|null }

@@ -12,7 +12,10 @@ async function context(org:string){
 export async function getWorkspaceNotifications(org:string):Promise<{ok:true;rows:WorkspaceNotification[]}|{ok:false}>{
  try{const {client,userId}=await context(org),result=await client.from("notifications").select("id,title,read_at,created_at,department_request_id,task_id").eq("organization_id",org).eq("recipient_id",userId).order("created_at",{ascending:false}).limit(100)
  if(result.error)return {ok:false}
- return {ok:true,rows:result.data}
+ const targets=await client.rpc("notification_task_targets",{target_organization:org})
+ if(targets.error)return {ok:false}
+ const taskByNotification=new Map(targets.data.map(target=>[target.notification_id,target.task_id]))
+ return {ok:true,rows:result.data.map(row=>({...row,task_id:row.task_id??taskByNotification.get(row.id)??null}))}
  }catch{return {ok:false}}
 }
 export async function markWorkspaceNotificationRead(org:string,id:string){
