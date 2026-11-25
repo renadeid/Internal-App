@@ -1,7 +1,7 @@
 import { beforeEach, expect, it, vi } from "vitest"
 import { getSharedAssets } from "./shared-asset-actions"
 
-const state = vi.hoisted(() => ({ allowed: true, failDepartments: false, queries: [] as { table: string; organization: string }[] }))
+const state = vi.hoisted(() => ({ allowed: true, failDepartments: false, failProjects: false, queries: [] as { table: string; organization: string }[] }))
 vi.mock("./current-organizations", () => ({ getAccessibleOrganizations: async () => ({ status: "ready", organizations: state.allowed ? [{ id: "org" }] : [] }) }))
 vi.mock("@/lib/shared-asset-storage", () => ({}))
 vi.mock("@/lib/supabase/server", () => ({ createClient: async () => ({
@@ -10,16 +10,16 @@ vi.mock("@/lib/supabase/server", () => ({ createClient: async () => ({
   from: (table: string) => {
     const query = { table, organization: "" }
     state.queries.push(query)
-    const data = table === "departments" ? [{ id: "marketing", name: "Marketing" }, { id: "operations", name: "Operations" }, { id: "empty", name: "New department" }] : table === "department_memberships" ? [{ profile_id: "marketer", department_id: "marketing" }, { profile_id: "operator", department_id: "operations" }] : []
+    const data = table === "projects" ? [{ id: "empty-project", name: "Project without assets" }] : table === "departments" ? [{ id: "marketing", name: "Marketing" }, { id: "operations", name: "Operations" }, { id: "empty", name: "New department" }] : table === "department_memberships" ? [{ profile_id: "marketer", department_id: "marketing" }, { profile_id: "operator", department_id: "operations" }] : []
     const q = {
       select: () => q, order: () => q, eq: (_key: string, value: string) => { query.organization = value; return q },
-      then: (resolve: (value: unknown) => unknown) => Promise.resolve({ data, error: state.failDepartments && table === "departments" ? { message: "Unavailable" } : null }).then(resolve),
+      then: (resolve: (value: unknown) => unknown) => Promise.resolve({ data, error: (state.failDepartments && table === "departments" || state.failProjects && table === "projects") ? { message: "Unavailable" } : null }).then(resolve),
     }
     return q
   },
 }) }))
 
-beforeEach(() => { Object.assign(state, { allowed: true, failDepartments: false, queries: [] }) })
+beforeEach(() => { Object.assign(state, { allowed: true, failDepartments: false, failProjects: false, queries: [] }) })
 
 it("separates department files while retaining unassigned files in All assets", async () => {
   const result = await getSharedAssets("org")
@@ -37,4 +37,16 @@ it("rejects an inaccessible workspace before querying department data", async ()
 it("reports department loading failures instead of showing incomplete results", async () => {
   state.failDepartments = true
   expect(await getSharedAssets("org")).toEqual({ ok: false, message: "Asset departments could not be loaded." })
+})
+
+it("lists accessible projects even when no asset is linked to them", async () => {
+ const result = await getSharedAssets("org")
+ expect(result.ok).toBe(true)
+ if (!result.ok) throw new Error(result.message)
+ expect(result.projects).toEqual([{ id: "empty-project", name: "Project without assets" }])
+ expect(state.queries).toContainEqual({ table: "projects", organization: "org" })
+})
+it("reports project loading failures instead of returning a misleading empty project list", async () => {
+ state.failProjects = true
+ expect(await getSharedAssets("org")).toEqual({ ok: false, message: "Asset projects could not be loaded." })
 })
