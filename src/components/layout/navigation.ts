@@ -1,5 +1,6 @@
 import {
   Activity,
+  Inbox,
   BookOpen,
   Boxes,
   FolderKanban,
@@ -25,6 +26,7 @@ export const mainNav: NavItem[] = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/projects", label: "Projects", icon: FolderKanban },
   { href: "/tasks", label: "My tasks", icon: ListTodo },
+  { href: "/requests", label: "Department requests", icon: Inbox },
   { href: "/activity", label: "Activity", icon: Activity },
   { href: "/assets", label: "Assets library", icon: Images },
   { href: "/artifacts", label: "Artifact hub", icon: Boxes },
@@ -49,6 +51,7 @@ const labels: Record<AppRoute, string> = {
   "/": "Dashboard",
   "/projects": "Projects",
   "/tasks": "My tasks",
+  "/requests": "Department requests",
   "/activity": "Activity",
   "/assets": "Assets library",
   "/artifacts": "Artifact hub",

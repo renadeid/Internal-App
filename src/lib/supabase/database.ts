@@ -150,6 +150,12 @@ export type Database = {
         }
         Relationships: []
       }
+      project_departments: {
+        Row: { project_id:string; department_id:string; organization_id:string; created_at:string }
+        Insert: { project_id:string; department_id:string; organization_id:string; created_at?:string }
+        Update: { project_id?:string; department_id?:string; organization_id?:string; created_at?:string }
+        Relationships: []
+      }
       departments: {
         Row: {
           id: string
@@ -377,6 +383,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      department_request_library: { Args: { target_organization: string }; Returns: unknown }
+      send_department_request: { Args: { target_organization: string; payload: Record<string,unknown> }; Returns: string }
+      decide_department_request: { Args: { target_request: string; decision: string; feedback?: string; target_project?: string|null; target_assignee?: string|null }; Returns: string|null }
+      department_request_result_file: { Args: { target_request: string }; Returns: unknown }
       has_project_creation_permission: { Args: { target_organization: string }; Returns: boolean }
       set_project_creation_permission: { Args: { target_organization: string; target_profile: string; allow_creation: boolean }; Returns: undefined }
       task_work_panel:{Args:{target_task:string};Returns:unknown}

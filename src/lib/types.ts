@@ -70,6 +70,7 @@ export type AppRoute =
   | "/"
   | "/projects"
   | "/tasks"
+  | "/requests"
   | "/activity"
   | "/assets"
   | "/artifacts"
