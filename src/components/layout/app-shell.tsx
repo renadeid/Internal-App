@@ -13,6 +13,7 @@ import {
 } from "@/components/projects/project-creation-access"
 import { Sidebar, SidebarPanel } from "@/components/layout/sidebar"
 import { AskConnect } from "@/components/assistant/ask-connect"
+import { AssetUploadProvider } from "@/components/assets/asset-upload-manager"
 import { SpotlightTour } from "@/components/onboarding/spotlight-tour"
 import type { UserIdentity } from "@/lib/auth/user-identity"
 import {
@@ -38,7 +39,7 @@ export function AppShell({
   const [createOpen, setCreateOpen] = useState(false)
 
   return (
-    <LiveWorkspaceProvider key={identity.email}><ProjectInvitationsProvider key={identity.email}>
+    <LiveWorkspaceProvider key={identity.email}><ProjectInvitationsProvider key={identity.email}><AssetUploadProvider key={identity.email}>
     <div className="roaya-workspace flex min-h-svh text-foreground">
       <a
         href="#main-content"
@@ -89,6 +90,6 @@ export function AppShell({
       <SpotlightTour userKey={identity.email || identity.name} firstName={identity.name.split(" ")[0]} />
       <AskConnect firstName={identity.name.split(" ")[0]} />
     </div>
-    </ProjectInvitationsProvider></LiveWorkspaceProvider>
+    </AssetUploadProvider></ProjectInvitationsProvider></LiveWorkspaceProvider>
   )
 }

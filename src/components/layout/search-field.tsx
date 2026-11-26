@@ -199,7 +199,7 @@ function buildResults(
       group: "Tasks",
       label: task.title,
       detail: task.status,
-      href: "/tasks",
+      href: `/tasks/${task.id}`,
     }))
 
   return [

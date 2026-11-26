@@ -105,7 +105,8 @@ export type CampaignHref = `/workspaces/marketing/campaigns/${string}`
 
 export type AssetHref = `/assets/${string}`
 
-export type AppHref = AppRoute | ProjectHref | CampaignHref | AssetHref
+export type TaskHref = `/tasks/${string}`
+export type AppHref = AppRoute | ProjectHref | CampaignHref | AssetHref | TaskHref
 
 export type TeamMember = {
   id: string

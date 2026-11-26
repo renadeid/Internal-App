@@ -13,21 +13,28 @@ async function context(organizationId:string){
 export async function getSharedAssets(organizationId:string):Promise<{ok:true;assets:SharedAsset[];access:SharedAssetAccess;folders:AssetFolder[];departments:{id:string;name:string}[];projects:{id:string;name:string}[]}|{ok:false;message:string}>{
  try{
   const {client}=await context(organizationId)
-  const [rows,access,folders,departments,memberships,projects]=await Promise.all([
+  const [rows,access,folders,departments,memberships,projects,projectDepartments]=await Promise.all([
    client.rpc("list_shared_assets",{target_organization:organizationId}),
    client.rpc("shared_asset_upload_access",{target_organization:organizationId}),
    client.from("asset_folders").select("id,name,visibility,project_id").eq("organization_id",organizationId).order("name"),
    client.from("departments").select("id,name").eq("organization_id",organizationId).order("name"),
    client.from("department_memberships").select("profile_id,department_id").eq("organization_id",organizationId),
-   client.from("projects").select("id,name").eq("organization_id",organizationId).order("name"),
+   client.from("projects").select("id,name,lead_department_id").eq("organization_id",organizationId).order("name"),
+   client.from("project_departments").select("project_id,department_id").eq("organization_id",organizationId),
   ])
   if(rows.error||access.error||!Array.isArray(rows.data)||!access.data)throw Error("Shared files are not available. The shared-files database update may still need to be applied.")
   if(folders.error)throw Error("Folders are not available. Apply the asset-folders database update.")
   if(departments.error||memberships.error)throw Error("Asset departments could not be loaded.")
-  if(projects.error)throw Error("Asset projects could not be loaded.")
+  if(projects.error||projectDepartments.error)throw Error("Asset projects could not be loaded.")
   const ownerDepartments=new Map<string,string[]>()
   for(const membership of memberships.data){const ids=ownerDepartments.get(membership.profile_id)??[];ids.push(membership.department_id);ownerDepartments.set(membership.profile_id,ids)}
-  const assets=(rows.data as SharedAsset[]).map(asset=>({...asset,departmentIds:ownerDepartments.get(asset.ownerId)??[]}))
+  const departmentsByProject=new Map<string,Set<string>>()
+  for(const project of projects.data){departmentsByProject.set(project.id,new Set(project.lead_department_id?[project.lead_department_id]:[]))}
+  for(const link of projectDepartments.data){const ids=departmentsByProject.get(link.project_id)??new Set<string>();ids.add(link.department_id);departmentsByProject.set(link.project_id,ids)}
+  const assets=(rows.data as SharedAsset[]).map(asset=>({...asset,departmentIds:[...new Set([
+   ...(ownerDepartments.get(asset.ownerId)??[]),
+   ...(asset.projects??[]).flatMap(project=>[...(departmentsByProject.get(project.id)??[])]),
+  ])]}))
   return {ok:true,assets,access:access.data as SharedAssetAccess,folders:folders.data,departments:departments.data,projects:projects.data}
  }
  catch(error){return {ok:false,message:error instanceof Error?error.message:"Files could not be loaded."}}
