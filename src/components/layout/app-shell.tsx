@@ -35,7 +35,7 @@ export function AppShell({
   const { activeOrganization } = useOrganization()
   const creation = useProjectCreationAccess(activeOrganization?.id ?? null)
   const canCreate = creation.status === "ready" && creation.canCreate
-  const [collapsed, setCollapsed] = useState(false)
+  const [collapsed, setCollapsed] = useState(true)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [createOpen, setCreateOpen] = useState(false)
 
