@@ -8,16 +8,17 @@ import {
   CalendarDays,
   FileSearch,
   FileUp,
+  FolderPlus,
   Inbox,
   ListTodo,
   Sparkles,
-  Upload,
 } from "lucide-react"
 
 import { useCurrentIdentity } from "@/components/auth/current-identity-provider"
 import { useLiveWorkspace } from "@/components/workspace/live-workspace-provider"
 import { LiveActivityList } from "@/components/activity/activity-feed"
 import { OPEN_ASSISTANT_EVENT } from "@/components/assistant/ask-connect"
+import { useProjectCreateLauncher } from "@/components/projects/project-create-launcher"
 import { Button } from "@/components/ui/button"
 import type { OrganizationTask } from "@/lib/auth/organization-tasks"
 import type { OrganizationProject } from "@/lib/auth/organization-projects"
@@ -135,12 +136,24 @@ function FocusTile({ task, openCount }: { task: DayTask | undefined; openCount: 
       <div className="relative">
         <p className="text-xs font-semibold tracking-wide text-[var(--color-teal-300)] uppercase">Focus now</p>
         {task ? (
-          <>
-            <h2 id="focus-title" className="mt-3 text-2xl leading-tight font-semibold sm:text-3xl">
-              {task.title}
-            </h2>
-            <p className="mt-2 text-sm text-white/70">{task.projectName || "Project"}</p>
-          </>
+          <dl className="mt-4 grid gap-4">
+            <div>
+              <dt className="text-[11px] font-semibold tracking-wide text-white/60 uppercase">Project</dt>
+              <dd className="mt-1 text-lg leading-snug font-semibold">
+                <Link href={"/projects/" + task.projectId} className="hover:underline">
+                  {task.projectName || "Project"}
+                </Link>
+              </dd>
+            </div>
+            <div>
+              <dt className="text-[11px] font-semibold tracking-wide text-white/60 uppercase">Task</dt>
+              <dd>
+                <h2 id="focus-title" className="mt-1 text-2xl leading-tight font-semibold sm:text-3xl">
+                  {task.title}
+                </h2>
+              </dd>
+            </div>
+          </dl>
         ) : (
           <>
             <h2 id="focus-title" className="mt-3 text-2xl leading-tight font-semibold sm:text-3xl">
@@ -256,33 +269,44 @@ function AskTile({ delay }: { delay: number }) {
 }
 
 function QuickActionsTile({ delay }: { delay: number }) {
-  const actions = [
-    { href: "/requests?new=1", label: "New request", hint: "Ask another department", icon: Inbox },
-    { href: "/assets?upload=1", label: "Upload asset", hint: "Share a file with the team", icon: Upload },
-    { href: "/artifacts?import=1", label: "Import artifact", hint: "Add a Markdown document", icon: FileUp },
-  ] as const
+  const projects = useProjectCreateLauncher()
+  const actions: { key: string; label: string; hint: string; icon: typeof Inbox; href?: string; onClick?: () => void }[] = [
+    ...(projects.canCreate
+      ? [{ key: "project", label: "New project", hint: "Start a new project", icon: FolderPlus, onClick: projects.open }]
+      : []),
+    { key: "request", href: "/requests?new=1", label: "New request", hint: "Ask another department", icon: Inbox },
+    { key: "artifact", href: "/artifacts?import=1", label: "Import artifact", hint: "Add a Markdown document", icon: FileUp },
+  ]
   return (
-    <section className={cn(tile, "flex flex-col col-span-2")} style={tileDelay(delay)} aria-label="Quick actions">
+    <section className={cn(tile, "col-span-2 flex flex-col")} style={tileDelay(delay)} aria-label="Quick actions">
       <TileTitle>Quick actions</TileTitle>
-      <div className="grid flex-1 gap-2 sm:grid-cols-3">
-        {actions.map((action, index) => (
-          <Link
-            key={action.href}
-            href={action.href}
-            className={cn(
-              "roaya-lift flex flex-col justify-between gap-4 rounded-xl border p-4",
-              index === 0 ? "border-transparent bg-primary text-primary-foreground" : "border-border bg-card hover:border-primary/40"
-            )}
-          >
-            <span className={cn("flex size-9 items-center justify-center rounded-lg", index === 0 ? "bg-white/15" : "bg-navy-500/10 text-navy-600")}>
-              <action.icon className="size-4.5" aria-hidden />
-            </span>
-            <span>
-              <span className="block text-sm font-semibold">{action.label}</span>
-              <span className={cn("mt-0.5 block text-xs", index === 0 ? "text-primary-foreground/75" : "text-muted-foreground")}>{action.hint}</span>
-            </span>
-          </Link>
-        ))}
+      <div className={cn("grid flex-1 gap-2", actions.length === 3 ? "sm:grid-cols-3" : "sm:grid-cols-2")}>
+        {actions.map((action, index) => {
+          const className = cn(
+            "roaya-lift flex flex-col justify-between gap-4 rounded-xl border p-4 text-start",
+            index === 0 ? "border-transparent bg-primary text-primary-foreground" : "border-border bg-card hover:border-primary/40"
+          )
+          const body = (
+            <>
+              <span className={cn("flex size-9 items-center justify-center rounded-lg", index === 0 ? "bg-white/15" : "bg-navy-500/10 text-navy-600")}>
+                <action.icon className="size-4.5" aria-hidden />
+              </span>
+              <span>
+                <span className="block text-sm font-semibold">{action.label}</span>
+                <span className={cn("mt-0.5 block text-xs", index === 0 ? "text-primary-foreground/75" : "text-muted-foreground")}>{action.hint}</span>
+              </span>
+            </>
+          )
+          return action.href ? (
+            <Link key={action.key} href={action.href} className={className}>
+              {body}
+            </Link>
+          ) : (
+            <button key={action.key} type="button" onClick={action.onClick} className={className}>
+              {body}
+            </button>
+          )
+        })}
       </div>
     </section>
   )

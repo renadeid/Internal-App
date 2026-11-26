@@ -14,6 +14,7 @@ import {
 import { Sidebar, SidebarPanel } from "@/components/layout/sidebar"
 import { AskConnect } from "@/components/assistant/ask-connect"
 import { AssetUploadProvider } from "@/components/assets/asset-upload-manager"
+import { ProjectCreateLauncherProvider } from "@/components/projects/project-create-launcher"
 import { SpotlightTour } from "@/components/onboarding/spotlight-tour"
 import type { UserIdentity } from "@/lib/auth/user-identity"
 import {
@@ -74,7 +75,9 @@ export function AppShell({
           onCreate={() => setCreateOpen(true)}
         />
         <main id="main-content" className="flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-          <div className="mx-auto w-full max-w-7xl"><ProjectInvitationsBanner />{children}</div>
+          <ProjectCreateLauncherProvider value={{ canCreate, open: () => setCreateOpen(true) }}>
+            <div className="mx-auto w-full max-w-7xl"><ProjectInvitationsBanner />{children}</div>
+          </ProjectCreateLauncherProvider>
         </main>
       </div>
       {activeOrganization && creation.status === "ready" && creation.canCreate ? (
