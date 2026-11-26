@@ -84,13 +84,6 @@ function useNewRowIds(ids: string[]) {
 
 export function LiveActivityList({ limit = 100 }: { limit?: number }) {
   const { result, refresh } = useLiveWorkspace()
-  const [now, setNow] = useState(() => new Date())
-  useEffect(() => {
-    const tick = window.setInterval(() => setNow(new Date()), 60_000)
-    return () => window.clearInterval(tick)
-  }, [])
-  const rows = result?.status === "ready" ? (result.activity as ActivityRow[]).slice(0, limit) : []
-  const fresh = useNewRowIds(rows.map((row) => row.id))
 
   if (!result)
     return (
@@ -115,8 +108,19 @@ export function LiveActivityList({ limit = 100 }: { limit?: number }) {
         </Button>
       </div>
     )
+  const rows = (result.activity as ActivityRow[]).slice(0, limit)
   if (!rows.length) return <p className="py-4 text-sm text-muted-foreground">No activity to show yet.</p>
+  return <ActivityRows rows={rows} />
+}
 
+/** Rendered only once activity has loaded in the browser, so relative times use the client clock. */
+function ActivityRows({ rows }: { rows: ActivityRow[] }) {
+  const [now, setNow] = useState(() => new Date())
+  useEffect(() => {
+    const tick = window.setInterval(() => setNow(new Date()), 60_000)
+    return () => window.clearInterval(tick)
+  }, [])
+  const fresh = useNewRowIds(rows.map((row) => row.id))
   return (
     <ul className="divide-y divide-border">
       {rows.map((a) => {
