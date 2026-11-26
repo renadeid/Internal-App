@@ -7,6 +7,8 @@ import { useOrganization } from "@/components/auth/organization-provider"
 import { PageIntro } from "@/components/shared/page-intro"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { useProjectCreateLauncher } from "@/components/projects/project-create-launcher"
+import { Plus } from "lucide-react"
 import {
   Card,
   CardDescription,
@@ -31,6 +33,7 @@ type ProjectsSnapshot = {
 
 export function ProjectsView() {
   const { activeOrganization, mode } = useOrganization()
+  const projectCreation = useProjectCreateLauncher()
   const description = activeOrganization
     ? `Projects visible in ${activeOrganization.name}.`
     : mode === "multiple"
@@ -41,7 +44,15 @@ export function ProjectsView() {
 
   return (
     <div className="flex flex-col gap-8">
-      <PageIntro title="Projects" description={description} />
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <PageIntro title="Projects" description={description} />
+        {projectCreation.canCreate ? (
+          <Button type="button" className="gap-2" onClick={projectCreation.open}>
+            <Plus className="size-4" aria-hidden />
+            New project
+          </Button>
+        ) : null}
+      </div>
       {activeOrganization ? (
         <ProjectList
           key={activeOrganization.id}

@@ -270,12 +270,11 @@ function AskTile({ delay }: { delay: number }) {
 
 function QuickActionsTile({ delay }: { delay: number }) {
   const projects = useProjectCreateLauncher()
-  const actions: { key: string; label: string; hint: string; icon: typeof Inbox; href?: string; onClick?: () => void }[] = [
-    ...(projects.canCreate
-      ? [{ key: "project", label: "New project", hint: "Start a new project", icon: FolderPlus, onClick: projects.open }]
-      : []),
-    { key: "request", href: "/requests?new=1", label: "New request", hint: "Ask another department", icon: Inbox },
-    { key: "artifact", href: "/artifacts?import=1", label: "Import artifact", hint: "Add a Markdown document", icon: FileUp },
+  // Each action opens its page; the create dialog opens only when its button there is clicked.
+  const actions: { key: string; href: string; label: string; hint: string; icon: typeof Inbox }[] = [
+    ...(projects.canCreate ? [{ key: "project", href: "/projects", label: "New project", hint: "Go to Projects", icon: FolderPlus }] : []),
+    { key: "request", href: "/requests", label: "New request", hint: "Go to Department requests", icon: Inbox },
+    { key: "artifact", href: "/artifacts", label: "Import artifact", hint: "Go to Artifact hub", icon: FileUp },
   ]
   return (
     <section className={cn(tile, "col-span-2 flex flex-col")} style={tileDelay(delay)} aria-label="Quick actions">
@@ -297,14 +296,10 @@ function QuickActionsTile({ delay }: { delay: number }) {
               </span>
             </>
           )
-          return action.href ? (
+          return (
             <Link key={action.key} href={action.href} className={className}>
               {body}
             </Link>
-          ) : (
-            <button key={action.key} type="button" onClick={action.onClick} className={className}>
-              {body}
-            </button>
           )
         })}
       </div>
