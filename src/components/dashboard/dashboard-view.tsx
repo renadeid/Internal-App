@@ -12,6 +12,7 @@ import {
   Inbox,
   ListTodo,
   Sparkles,
+  UserX,
 } from "lucide-react"
 
 import { useCurrentIdentity } from "@/components/auth/current-identity-provider"
@@ -308,9 +309,12 @@ function QuickActionsTile({ delay }: { delay: number }) {
 }
 
 function WorkloadTile({ tasks, delay }: { tasks: DayTask[]; delay: number }) {
-  const people = [...tasks.reduce((map, task) => {
-    const key = task.assigneeId ?? "unassigned"
-    const row = map.get(key) ?? { name: task.assigneeName || (task.assigneeId ? "Team member" : "Unassigned"), open: 0, late: 0 }
+  const assigned = tasks.filter((task) => task.assigneeId)
+  const unassigned = tasks.filter((task) => !task.assigneeId)
+  const unassignedLate = unassigned.filter((task) => task.due.group === "overdue").length
+  const people = [...assigned.reduce((map, task) => {
+    const key = task.assigneeId as string
+    const row = map.get(key) ?? { name: task.assigneeName || "Team member", open: 0, late: 0 }
     row.open++
     if (task.due.group === "overdue") row.late++
     map.set(key, row)
@@ -349,8 +353,21 @@ function WorkloadTile({ tasks, delay }: { tasks: DayTask[]; delay: number }) {
           ))}
         </ul>
       ) : (
-        <p className="text-sm text-muted-foreground">No open tasks across the team.</p>
+        <p className="text-sm text-muted-foreground">{unassigned.length ? "No open tasks are assigned yet." : "No open tasks across the team."}</p>
       )}
+      {unassigned.length ? (
+        <Link
+          href="/tasks"
+          className="mt-4 flex items-center gap-2 rounded-xl border border-dashed border-border px-3 py-2 text-xs text-muted-foreground hover:border-primary/40 hover:text-foreground"
+        >
+          <UserX className="size-4 shrink-0" aria-hidden />
+          <span className="flex-1">
+            {unassigned.length} {unassigned.length === 1 ? "task has" : "tasks have"} no one assigned
+            {unassignedLate ? <span className="font-semibold text-destructive"> · {unassignedLate} late</span> : null}
+          </span>
+          <span className="font-medium text-primary">Assign</span>
+        </Link>
+      ) : null}
     </section>
   )
 }
