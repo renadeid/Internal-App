@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowUpRight, BookOpen, CheckCircle2, ChevronLeft, ChevronRight, FileText, Search, Upload, X } from "lucide-react";
 import { useOrganization } from "@/components/auth/organization-provider";
 import { Button } from "@/components/ui/button";
@@ -52,7 +52,8 @@ function Hub({ organizationId }: { organizationId: string }) {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("All artifacts");
   const [page, setPage] = useState(1);
-  const [importing, setImporting] = useState(false);
+  const startImport = useSearchParams().get("import") === "1";
+  const [importing, setImporting] = useState(() => startImport);
   const [dropped, setDropped] = useState<{ file: ReadArtifactFile | null; error: string } | null>(null);
   const [dragging, setDragging] = useState(false);
   const [imported, setImported] = useState<{ id: string; title: string } | null>(null);
@@ -300,7 +301,7 @@ function Hub({ organizationId }: { organizationId: string }) {
           </div>
         </footer>
       ) : null}
-      {importing ? (
+      {importing && canUpload ? (
         <ImportDialog
           organizationId={organizationId}
           initial={dropped}

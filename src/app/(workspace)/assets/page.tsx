@@ -1,3 +1,4 @@
+import { Suspense } from "react"
 import type { Metadata } from "next"
 
 import { AssetsLibrary } from "@/components/assets/assets-library"
@@ -7,5 +8,9 @@ export const metadata: Metadata = {
 }
 
 export default function AssetsPage() {
-  return <AssetsLibrary />
+  return (
+    <Suspense fallback={<p role="status">Loading shared files…</p>}>
+      <AssetsLibrary />
+    </Suspense>
+  )
 }

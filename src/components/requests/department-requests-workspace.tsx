@@ -25,11 +25,11 @@ export function DepartmentRequestsWorkspace(){
  const [error,setError]=useState(""),[notice,setNotice]=useState(""),[loading,setLoading]=useState(false),[generation,setGeneration]=useState(0)
  const [archive,setArchive]=useState("active")
  const [tab,setTab]=useState<"sent"|"inbox">("sent"),[search,setSearch]=useState(""),[department,setDepartment]=useState("all"),[status,setStatus]=useState("all"),[page,setPage]=useState(1)
- const requestedId=useSearchParams().get("request"),router=useRouter()
+ const searchParams=useSearchParams(),requestedId=searchParams.get("request"),startNew=searchParams.get("new")==="1",router=useRouter()
  const [selection,setSelection]=useState<{query:string|null;id:string|null}|null>(null)
  const selected=selection?.query===requestedId?selection.id:requestedId
  function setSelected(id:string|null){setSelection({query:requestedId,id});if(id===null&&requestedId)router.replace("/requests",{scroll:false})}
- const [creating,setCreating]=useState(false)
+ const [creating,setCreating]=useState(()=>startNew)
  const library=snapshot && snapshot.org===org && snapshot.query===requestedId?snapshot.library:null
  useEffect(()=>{if(!org)return;let active=true
   getDepartmentRequests(org).then(result=>{if(!active)return;setLoading(false);if(result.ok){setSnapshot({org,query:requestedId,library:result.library});setError("")}else setError(result.message)}).catch(()=>{if(active){setLoading(false);setError("Requests could not be loaded. Retry to reconnect.")}})

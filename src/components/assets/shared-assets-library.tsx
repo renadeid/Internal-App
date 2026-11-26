@@ -1,6 +1,7 @@
 "use client"
 import Link from "next/link"
 import Image from "next/image"
+import {useSearchParams} from "next/navigation"
 import {useEffect,useRef,useState} from "react"
 import {Download,FileText,FolderOpen,ImageIcon,Play,Plus,RefreshCw,Trash2,Video} from "lucide-react"
 import {useOrganization} from "@/components/auth/organization-provider"
@@ -35,7 +36,7 @@ export function SharedAssetsLibrary(){const {activeOrganization}=useOrganization
 function Library({organizationId}:{organizationId:string}){
  const {result,reload}=useAssetLibrary(organizationId)
  const uploads=useOptionalAssetUploads()
- const [department,setDepartment]=useState("all");const [folderId,setFolderId]=useState<string|null>(null);const [movingAsset,setMovingAsset]=useState<SharedAsset|null>(null);const [query,setQuery]=useState("");const [type,setType]=useState("all");const [project,setProject]=useState("all");const [uploading,setUploading]=useState(false);const [deletingAsset,setDeletingAsset]=useState<SharedAsset|null>(null);const [notice,setNotice]=useState("")
+ const [department,setDepartment]=useState("all");const [folderId,setFolderId]=useState<string|null>(null);const [movingAsset,setMovingAsset]=useState<SharedAsset|null>(null);const [query,setQuery]=useState("");const [type,setType]=useState("all");const [project,setProject]=useState("all");const startUpload=useSearchParams().get("upload")==="1";const [uploading,setUploading]=useState(()=>startUpload);const [deletingAsset,setDeletingAsset]=useState<SharedAsset|null>(null);const [notice,setNotice]=useState("")
  if(!result)return <p role="status">Loading shared files…</p>
  if(!result.ok)return <div className="roaya-glass grid gap-4 p-6"><h2 className="font-semibold">Shared files are unavailable</h2><p className="text-sm text-muted-foreground">Please try again. Contact your administrator if this continues.</p><Button type="button" variant="outline" className="w-fit" onClick={reload}>Retry</Button></div>
  const {assets,access}=result
@@ -54,7 +55,7 @@ function Library({organizationId}:{organizationId:string}){
   {notice?<p role="status" className="text-sm">{notice}</p>:null}
   {deletingAsset?<CardDeleteDialog key={deletingAsset.id} asset={deletingAsset} organizationId={organizationId} onClose={()=>setDeletingAsset(null)} onDeleted={message=>{setDeletingAsset(null);setNotice(message);reload()}}/>:null}
   <p className="text-xs text-muted-foreground">Files and counts reflect your access permissions. Project files require full project access.</p>
-  {uploading?<UploadAssetDialog organizationId={organizationId} access={access} onClose={()=>setUploading(false)} onSaved={()=>{setUploading(false);reload()}}/>:null}
+  {uploading&&access.canUpload?<UploadAssetDialog organizationId={organizationId} access={access} onClose={()=>setUploading(false)} onSaved={()=>{setUploading(false);reload()}}/>:null}
  </section>
 }
 function AssetThumbnail({asset}:{asset:SharedAsset}){
