@@ -1,5 +1,10 @@
 import type { SharedAsset } from "./shared-assets"
 
+export function matchesAssetDepartment(asset: SharedAsset, department: string) {
+  return department === "all" || !!asset.departmentIds?.includes(department) ||
+    (asset.visibility === "company" && asset.departmentIds?.length === 0 && asset.projects.length === 0)
+}
+
 export function filterSharedAssets(assets: SharedAsset[], filters: {
   folderId: string | null
   query: string

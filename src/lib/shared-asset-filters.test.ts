@@ -1,5 +1,5 @@
 import { expect, it } from "vitest"
-import { filterSharedAssets } from "./shared-asset-filters"
+import { filterSharedAssets, matchesAssetDepartment } from "./shared-asset-filters"
 import type { SharedAsset } from "./shared-assets"
 
 const assets: SharedAsset[] = [
@@ -24,3 +24,12 @@ it("combines department, type, project and search filters", () => {
 it("shows no assets for a department without files", () => {
   expect(filterSharedAssets(assets, { ...filters, department: "empty" })).toEqual([])
 })
+
+ it("keeps general company logos visible in department filters without including other departments or restricted files", () => {
+ const logo = { ...assets[0], departmentIds: [] }
+ expect(matchesAssetDepartment(logo, "marketing")).toBe(true)
+ expect(matchesAssetDepartment({ ...logo, departmentIds: ["sales"] }, "marketing")).toBe(false)
+ expect(matchesAssetDepartment({ ...logo, visibility: "project_members" }, "marketing")).toBe(false)
+ expect(matchesAssetDepartment({ ...logo, projects: [{ id: "sales-project", name: "Sales" }] }, "marketing")).toBe(false)
+ expect(filterSharedAssets([logo], { ...filters, department: "marketing", departmentAssetIds: new Set([logo.id]) })).toEqual([logo])
+ })

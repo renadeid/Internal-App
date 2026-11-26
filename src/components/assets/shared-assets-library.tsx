@@ -1,8 +1,8 @@
 "use client"
 import Link from "next/link"
 import Image from "next/image"
-import {useEffect,useState} from "react"
-import {Download,FileText,FolderOpen,ImageIcon,Plus,RefreshCw,Trash2,Video} from "lucide-react"
+import {useEffect,useRef,useState} from "react"
+import {Download,FileText,FolderOpen,ImageIcon,Play,Plus,RefreshCw,Trash2,Video} from "lucide-react"
 import {useOrganization} from "@/components/auth/organization-provider"
 import {Button,buttonVariants} from "@/components/ui/button"
 import {Input} from "@/components/ui/input"
@@ -59,7 +59,18 @@ function Library({organizationId}:{organizationId:string}){
 }
 function AssetThumbnail({asset}:{asset:SharedAsset}){
  const [failed,setFailed]=useState(false)
+ if(asset.hasFile&&asset.mime==="video/mp4"&&!failed)return <VideoThumbnail asset={asset} onError={()=>setFailed(true)}/>
  return asset.hasFile&&asset.mime?.startsWith("image/")&&!failed?<div className="flex h-24 w-28 shrink-0 items-center justify-start"><Image src={"/assets/"+asset.id+"/file?preview=1"} alt={asset.name+" preview"} width={112} height={96} unoptimized className="max-h-full max-w-full object-contain object-left" onError={()=>setFailed(true)}/></div>:<div className="flex size-16 shrink-0 items-center justify-center rounded-xl bg-muted/50 text-muted-foreground"><FileIcon type={asset.type}/></div>
+}
+/** A frame from the video itself. Loads only when the card is on screen, and only the first part of the file (range request). */
+function VideoThumbnail({asset,onError}:{asset:SharedAsset;onError:()=>void}){
+ const box=useRef<HTMLDivElement>(null);const [visible,setVisible]=useState(false);const [ready,setReady]=useState(false)
+ useEffect(()=>{const node=box.current;if(!node)return;const observer=new IntersectionObserver(entries=>{if(entries.some(e=>e.isIntersecting)){setVisible(true);observer.disconnect()}},{rootMargin:"200px"});observer.observe(node);return()=>observer.disconnect()},[])
+ return <div ref={box} className="relative h-24 w-28 shrink-0 overflow-hidden rounded-xl bg-[linear-gradient(135deg,var(--color-navy-500),var(--color-teal-500))] text-white">
+  {visible?<video src={"/assets/"+asset.id+"/file?preview=1#t=0.5"} muted playsInline preload="metadata" aria-label={asset.name+" preview"} className={"absolute inset-0 size-full object-cover transition-opacity duration-300 "+(ready?"opacity-100":"opacity-0")} onLoadedData={()=>setReady(true)} onError={onError}/>:null}
+  {ready?null:<div className="absolute inset-0 flex items-center justify-center"><Video className="size-7 opacity-80" aria-hidden/></div>}
+  <span className="absolute right-1.5 bottom-1.5 flex size-6 items-center justify-center rounded-full bg-black/55 backdrop-blur-sm" aria-hidden><Play className="size-3 translate-x-px fill-white"/></span>
+ </div>
 }
 function CardDeleteDialog({asset,organizationId,onClose,onDeleted}:{asset:SharedAsset;organizationId:string;onClose:()=>void;onDeleted:(message:string)=>void}){
  const [confirmation,setConfirmation]=useState("");const [pending,setPending]=useState(false);const [error,setError]=useState("")

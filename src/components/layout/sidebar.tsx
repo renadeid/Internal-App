@@ -169,8 +169,7 @@ function NavGroup({
             aria-current={active ? "page" : undefined}
             onClick={onNavigate}
             className={cn(
-              "roaya-nav-link flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring",
-              active && "bg-sidebar-accent text-sidebar-accent-foreground hover:bg-sidebar-accent",
+              "roaya-nav-link flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring",
               collapsed && "justify-center px-2"
             )}
           >
