@@ -29,7 +29,7 @@ const avatarColors = [
   "bg-[var(--color-purple-600)]",
 ]
 
-function colorFor(name: string) {
+export function colorFor(name: string) {
   let hash = 0
   for (const char of name) hash = (hash * 31 + char.charCodeAt(0)) | 0
   return avatarColors[Math.abs(hash) % avatarColors.length]
@@ -46,7 +46,7 @@ function iconFor(row: ActivityRow) {
   return Sparkles
 }
 
-function hrefFor(a: ActivityRow) {
+export function hrefFor(a: ActivityRow) {
   return a.asset_id
     ? "/assets/" + a.asset_id
     : a.campaign_id
@@ -59,7 +59,7 @@ function hrefFor(a: ActivityRow) {
 const fullDate = new Intl.DateTimeFormat("en-GB", { timeZone: "Africa/Cairo", dateStyle: "medium", timeStyle: "short" })
 
 /** Remembers which rows were already shown, so only new ones slide in. */
-function useNewRowIds(ids: string[]) {
+export function useNewRowIds(ids: string[]) {
   const seen = useRef<Set<string> | null>(null)
   const [fresh, setFresh] = useState<Set<string>>(() => new Set())
   const key = ids.join(",")
